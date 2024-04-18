@@ -1,19 +1,19 @@
-import { useForm } from "react-hook-form";
-import style from "./style.module.scss";
-import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { signInSchema } from "./validtionSchemas";
-import Field from "../components/Field/Field";
-import Button from "../components/Button/Button";
+import { useForm } from 'react-hook-form'
+import style from './style.module.scss'
+import { useContext } from 'react'
+import { AuthContext } from '../context/AuthContext'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { signInSchema } from './validtionSchemas'
+import Field from '../components/Field/Field'
+import Button from '../components/Button/Button'
 
 const defaultValues = {
-  userName: "",
-  password: "",
-};
+  userName: '',
+  password: '',
+}
 
 export default function SignIn() {
-  const { handleSignIn } = useContext(AuthContext);
+  const { handleSignIn } = useContext(AuthContext)
 
   const {
     register,
@@ -22,10 +22,13 @@ export default function SignIn() {
   } = useForm({
     defaultValues,
     resolver: yupResolver(signInSchema),
-  });
+  })
 
   return (
-    <form onSubmit={handleSubmit(handleSignIn)} className={style.wrapper}>
+    <form
+      onSubmit={handleSubmit(handleSignIn)}
+      className={`${style.wrapper} ${style.authPanel}`}
+    >
       <h2>Войти в аккаунт</h2>
       <Field
         name="userName"
@@ -47,5 +50,5 @@ export default function SignIn() {
         Войти
       </Button>
     </form>
-  );
+  )
 }

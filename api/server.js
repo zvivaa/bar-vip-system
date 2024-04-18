@@ -31,3 +31,17 @@ app.get('/resource/protected', TokenService.checkAccess, (req, res) => {
 app.listen(PORT, () => {
   console.log('Сервер успешно запущен')
 })
+
+app.post('/reserve', async (req, res) => {
+  const { name, date, time, people, table } = req.body
+  try {
+    const result = await pool.query(
+      'INSERT INTO reservations (name, reservation_date, number_of_people, table_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [name, date, people, table]
+    )
+    res.status(201).json(result.rows[0])
+  } catch (error) {
+    console.error('Error during reservation:', error.message)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})

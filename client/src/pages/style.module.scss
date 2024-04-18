@@ -1,11 +1,6 @@
 .wrapper {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
   gap: 20px;
-
-  transform: scale(1.15);
-
+  padding: 2rem;
   & > * {
     width: min(400px, 70vw) !important;
   }
@@ -19,8 +14,23 @@
     font-weight: 100;
   }
 
-  animation: appearence 0.5s;
+  .testPanel {
+    & > * {
+      width: min(400px, 70vw) !important;
+    }
+    text-align: center;
+  }
 
+  animation: appearence 0.5s;
+}
+
+.authPanel {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  position: relative;
 }
 
 @keyframes appearence {

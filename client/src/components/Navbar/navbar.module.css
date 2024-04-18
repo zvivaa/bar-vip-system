@@ -1,0 +1,31 @@
+/* navbar.module.css */
+
+.navbar {
+  background-color: #333;
+  padding: 1rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbarList {
+  list-style: none;
+  padding: 0;
+  margin: 15px;
+  display: flex;
+}
+
+.navbarItem {
+  margin-right: 1rem;
+}
+
+.navbarLink {
+  text-decoration: none;
+  color: #fff;
+  transition: color 0.3s ease;
+}
+
+.navbarLink:hover {
+  color: #ffd700;
+}

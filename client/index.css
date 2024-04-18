@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.mantine-DatePicker-arrow {
+  font-size: 16px; /* или другой желаемый размер */
+}
+
+.mantine-DatePicker-arrowLeft {
+  margin-right: 8px;
+}
+
+.mantine-DatePicker-calendarHeader {
+  display: flex;
+}
+.leftMenu {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 65%;
+  height: 100vh;
+  margin-left: 10%;
+}
+.rightMenu {
+  margin-right: 0;
+  margin-left: auto;
+  width: 15;
+  padding: 15px;
+  height: 100vh;
+  background-color: rgba(70, 70, 70, 0.292);
+}
+.container {
+  max-width: 1920px;
+  display: flex;
+  justify-content: space-between;
+}
+.table-list {
+  margin-top: -10%;
+}
+.table-list Button {
+  width: 250px;
+  height: 230px;
+}
+._authPanel_atidq_22 {
+  margin-left: auto;
+  margin-right: auto;
+}
+form ._button_1oj4g_1 {
+  margin-left: 0;
+}
