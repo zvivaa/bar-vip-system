@@ -7,18 +7,22 @@ import Demo from './pages/Demo'
 import style from './app.module.scss'
 import { AuthContext } from './context/AuthContext'
 import Navbar from './components/Navbar/Navbar'
+import Admin from './pages/Admin'
 
 const App = () => {
   const { isUserLogged } = useContext(AuthContext)
   return (
     <>
-      {isUserLogged && <Navbar />}
-      <div className={style.wrapper}>
-        <SnackbarProvider />
-        <BrowserRouter>
+      <SnackbarProvider />
+      <BrowserRouter>
+        {isUserLogged && <Navbar />}
+        <div className={style.wrapper}>
           <Routes>
             {isUserLogged ? (
-              <Route path="demo" element={<Demo />} />
+              <>
+                <Route path="demo" element={<Demo />} />
+                <Route path="admin" element={<Admin />} />
+              </>
             ) : (
               <>
                 <Route path="sign-in" element={<SignIn />} />
@@ -30,8 +34,8 @@ const App = () => {
               element={<Navigate to={isUserLogged ? 'demo' : 'sign-in'} />}
             />
           </Routes>
-        </BrowserRouter>
-      </div>
+        </div>
+      </BrowserRouter>
     </>
   )
 }

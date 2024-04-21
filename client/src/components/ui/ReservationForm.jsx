@@ -1,45 +1,24 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useContext } from 'react'
 import { Form, Input, Button, DatePicker, InputNumber, TimePicker } from 'antd'
 import '../../antd/dist/antd.css'
+import { ResourceContext } from '../../context/ResourceContext'
 
 const ReservationForm = ({ selectedTable, onClose }) => {
+  const { handleReservation } = useContext(ResourceContext)
   const [form] = Form.useForm()
 
   const onFinish = async (values) => {
-    if (!values.date || !values.time) {
-      console.error('Date or time is missing!')
-      return // Прекратить выполнение, если дата или время отсутствуют
+    const reservationData = {
+      name: values.name,
+      date: `${values.date.format('YYYY-MM-DD')}T${values.time.format(
+        'HH:mm'
+      )}`,
+      people: values.people,
+      table: selectedTable,
     }
 
-    const reservationDateTime = `${values.date.format(
-      'YYYY-MM-DD'
-    )}T${values.time.format('HH:mm')}`
-
-    try {
-      const response = await fetch('http://localhost:5000/reserve', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: values.name,
-          date: reservationDateTime,
-          people: values.people,
-          table: selectedTable,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const responseData = await response.json()
-      console.log('Data successfully saved to the database:', responseData)
-
-      onClose()
-    } catch (error) {
-      console.error('Failed to save the reservation:', error)
-    }
+    await handleReservation(reservationData)
+    onClose()
   }
 
   useEffect(() => {

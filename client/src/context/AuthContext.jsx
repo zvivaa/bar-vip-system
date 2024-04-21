@@ -5,6 +5,7 @@ import { Circle } from 'react-preloaders'
 import config from '../config'
 import style from '../app.module.scss'
 import showErrorMessage from '../utils/showErrorMessage'
+import { jwtDecode } from 'jwt-decode'
 import inMemoryJWT from '../services/inMemoryJWT'
 
 export const AuthClient = axios.create({
@@ -37,6 +38,7 @@ const AuthProvider = ({ children }) => {
   const [isAppReady, setIsAppReady] = useState(false)
   const [isUserLogged, setIsUserLogged] = useState(false)
   const [data, setData] = useState()
+  const [userRole, setUserRole] = useState(null)
 
   const handleFetchProtected = () => {
     ResourseClient.get('/protected')
@@ -69,8 +71,10 @@ const AuthProvider = ({ children }) => {
     AuthClient.post('/sign-in', data)
       .then((res) => {
         const { accessToken, accessTokenExpiration } = res.data
+        const decoded = jwtDecode(accessToken)
         inMemoryJWT.setToken(accessToken, accessTokenExpiration)
         setIsUserLogged(true)
+        setUserRole(decoded.role)
       })
       .catch(showErrorMessage)
   }
@@ -79,14 +83,16 @@ const AuthProvider = ({ children }) => {
     AuthClient.post('/refresh')
       .then((res) => {
         const { accessToken, accessTokenExpiration } = res.data
+        const decoded = jwtDecode(accessToken)
         inMemoryJWT.setToken(accessToken, accessTokenExpiration)
-
-        setIsAppReady(true)
         setIsUserLogged(true)
+        setUserRole(decoded.role) // Обновление роли при обновлении токена
+        setIsAppReady(true)
       })
       .catch(() => {
         setIsAppReady(true)
         setIsUserLogged(false)
+        setUserRole(null)
       })
   }, [])
 
@@ -115,6 +121,7 @@ const AuthProvider = ({ children }) => {
         handleLogOut,
         isUserLogged,
         isAppReady,
+        userRole,
       }}
     >
       {isAppReady ? (
