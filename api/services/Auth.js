@@ -4,6 +4,7 @@ import TokenService from './Token.js'
 import { NotFound, Forbidden, Conflict, Unauthorized } from '../utils/Errors.js'
 import RefreshSessionsRepository from '../repositories/RefreshSession.js'
 import UserRepository from '../repositories/User.js'
+import ReservationRepository from '../repositories/ReservationRepository.js'
 import { ACCESS_TOKEN_EXPIRATION } from '../constants.js'
 
 class AuthService {
@@ -30,11 +31,17 @@ class AuthService {
       refreshToken,
       fingerprint,
     })
-
     return {
       accessToken,
       refreshToken,
       accessTokenExpiration: ACCESS_TOKEN_EXPIRATION,
+      user: {
+        id: userData.id,
+        role: userData.role,
+        userName: userData.userName,
+        real_name: userData.real_name,
+        phone: userData.phone,
+      },
     }
   }
 
@@ -124,6 +131,25 @@ class AuthService {
       refreshToken,
       accessTokenExpiration: ACCESS_TOKEN_EXPIRATION,
     }
+  }
+
+  static async createUsers(users) {
+    const createdUsers = []
+    for (const user of users) {
+      const { userName, password, role } = user
+      const hashedPassword = bcrypt.hashSync(password, 8)
+      const createdUser = await UserRepository.createUser({
+        userName,
+        password: hashedPassword,
+        role,
+      })
+      createdUsers.push({ ...createdUser, password }) // Возвращаем оригинальный пароль вместе с остальными данными
+    }
+    return createdUsers
+  }
+
+  static async getActiveReservations() {
+    return await ReservationRepository.getActiveReservations()
   }
 }
 

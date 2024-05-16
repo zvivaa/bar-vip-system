@@ -1,29 +1,29 @@
-import React, { useEffect, useContext } from 'react'
+import React, { useContext } from 'react'
 import { Form, Input, Button, DatePicker, InputNumber, TimePicker } from 'antd'
-import '../../antd/dist/antd.css'
-import { ResourceContext } from '../../context/ResourceContext'
+import axios from 'axios'
+import { AuthContext } from '../../context/AuthContext'
+import config from '../../config'
 
 const ReservationForm = ({ selectedTable, onClose }) => {
-  const { handleReservation } = useContext(ResourceContext)
+  const { user } = useContext(AuthContext)
   const [form] = Form.useForm()
 
   const onFinish = async (values) => {
-    const reservationData = {
-      name: values.name,
-      date: `${values.date.format('YYYY-MM-DD')}T${values.time.format(
-        'HH:mm'
-      )}`,
-      people: values.people,
-      table: selectedTable,
+    try {
+      const reservationData = {
+        ...values,
+        date: values.date.format('YYYY-MM-DD'),
+        time: values.time.format('HH:mm'),
+        table: selectedTable,
+        user_id: user.id,
+      }
+
+      await axios.post(`${config.API_URL}/reserve`, reservationData)
+      onClose()
+    } catch (error) {
+      console.error('Ошибка при бронировании:', error)
     }
-
-    await handleReservation(reservationData)
-    onClose()
   }
-
-  useEffect(() => {
-    form.setFieldsValue({ table: selectedTable })
-  }, [selectedTable, form])
 
   const getDisabledHours = () => {
     const hours = []
@@ -56,7 +56,7 @@ const ReservationForm = ({ selectedTable, onClose }) => {
           name="table"
           initialValue={selectedTable}
         >
-          <Input disabled value="Выбран стол:" />
+          <Input disabled value={`Выбран стол: ${selectedTable}`} />
         </Form.Item>
 
         <Form.Item

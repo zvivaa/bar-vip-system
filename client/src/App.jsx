@@ -1,42 +1,42 @@
 import { useContext } from 'react'
-import { Link, Routes, Route, BrowserRouter, Navigate } from 'react-router-dom'
+import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom'
 import { SnackbarProvider } from 'notistack'
 import SignUp from './pages/SignUp'
 import SignIn from './pages/SignIn'
 import Demo from './pages/Demo'
-import style from './app.module.scss'
+import Profile from './pages/Profile'
+import Admin from './pages/Admin'
 import { AuthContext } from './context/AuthContext'
 import Navbar from './components/Navbar/Navbar'
-import Admin from './pages/Admin'
 
 const App = () => {
-  const { isUserLogged } = useContext(AuthContext)
+  const { isUserLogged, user } = useContext(AuthContext)
   return (
-    <>
-      <SnackbarProvider />
+    <SnackbarProvider>
       <BrowserRouter>
         {isUserLogged && <Navbar />}
-        <div className={style.wrapper}>
-          <Routes>
-            {isUserLogged ? (
-              <>
-                <Route path="demo" element={<Demo />} />
+        <Routes>
+          {isUserLogged ? (
+            <>
+              <Route path="demo" element={<Demo />} />
+              <Route path="profile" element={<Profile />} />
+              {user && user.role === 1 && (
                 <Route path="admin" element={<Admin />} />
-              </>
-            ) : (
-              <>
-                <Route path="sign-in" element={<SignIn />} />
-                <Route path="sign-up" element={<SignUp />} />
-              </>
-            )}
-            <Route
-              path="*"
-              element={<Navigate to={isUserLogged ? 'demo' : 'sign-in'} />}
-            />
-          </Routes>
-        </div>
+              )}
+            </>
+          ) : (
+            <>
+              <Route path="sign-in" element={<SignIn />} />
+              <Route path="sign-up" element={<SignUp />} />
+            </>
+          )}
+          <Route
+            path="*"
+            element={<Navigate to={isUserLogged ? 'demo' : 'sign-in'} />}
+          />
+        </Routes>
       </BrowserRouter>
-    </>
+    </SnackbarProvider>
   )
 }
 

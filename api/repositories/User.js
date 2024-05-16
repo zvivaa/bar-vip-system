@@ -1,13 +1,17 @@
 import pool from '../db.js'
 
 class UserRepository {
-  static async createUser({ userName, hashedPassword, role }) {
-    const response = await pool.query(
-      'INSERT INTO users (name, password, role) VALUES ($1, $2, $3) RETURNING *',
-      [userName, hashedPassword, role]
-    )
-
-    return response.rows[0]
+  static async createUser({ userName, password, role }) {
+    try {
+      const result = await pool.query(
+        'INSERT INTO users (name, password, role) VALUES ($1, $2, $3) RETURNING *',
+        [userName, password, role]
+      )
+      return result.rows[0]
+    } catch (error) {
+      console.error('Error creating user:', error)
+      throw error
+    }
   }
 
   static async getUserData(userName) {

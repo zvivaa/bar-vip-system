@@ -2,7 +2,9 @@ CREATE TABLE users(
     id SERIAL PRIMARY KEY,
     name VARCHAR(25) UNIQUE NOT NULL,
     password VARCHAR(60) NOT NULL,
-    role SMALLINT NOT NULL
+    role SMALLINT NOT NULL,
+    real_name VARCHAR(25),
+    phone VARCHAR(13),
 );
 
 CREATE TABLE refresh_sessions(
@@ -17,7 +19,8 @@ CREATE TABLE reservations (
     name VARCHAR(255) NOT NULL,
     reservation_date TIMESTAMP WITH TIME ZONE NOT NULL,
     number_of_people INTEGER NOT NULL,
-    table_id INTEGER NOT NULL
+    table_id INTEGER NOT NULL,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );
 
 

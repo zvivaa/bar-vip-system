@@ -2,19 +2,32 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import Fingerprint from 'express-fingerprint'
-import AuthRootRouter from './routers/Auth.js'
+import AuthRouter from './routers/Auth.js'
 import TokenService from './services/Token.js'
 import cookieParser from 'cookie-parser'
 import pool from './db.js'
+
 dotenv.config()
 
 const PORT = process.env.PORT || 5000
-
 const app = express()
 
 app.use(cookieParser())
 app.use(express.json())
-app.use(cors({ credentials: true, origin: process.env.CLIENT_URL }))
+
+const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173']
+app.use(
+  cors({
+    credentials: true,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+  })
+)
 
 app.use(
   Fingerprint({
@@ -22,37 +35,35 @@ app.use(
   })
 )
 
-app.use('/auth', AuthRootRouter)
+app.use('/auth', AuthRouter)
 
 app.get('/resource/protected', TokenService.checkAccess, (req, res) => {
   return res.status(200).json('Добро пожаловать!' + Date.now())
 })
 
 app.listen(PORT, () => {
-  console.log('Сервер успешно запущен')
+  console.log(`Сервер успешно запущен на порту ${PORT}`)
 })
 
 app.post('/reserve', async (req, res) => {
-  const { name, date, people, table } = req.body
+  const { name, date, time, people, table, user_id } = req.body
+  const reservation_date = `${date} ${time}`
 
   try {
-    // Проверяем, занят ли стол на данное время
     const exists = await pool.query(
       'SELECT * FROM reservations WHERE reservation_date = $1 AND table_id = $2',
-      [date, table]
+      [reservation_date, table]
     )
 
-    // Если запись существует, стол уже занят
     if (exists.rowCount > 0) {
       return res
         .status(409)
         .json({ error: 'Данный стол на это время уже занят' })
     }
 
-    // Вставка новой записи, если стол свободен
     const result = await pool.query(
-      'INSERT INTO reservations (name, reservation_date, number_of_people, table_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [name, date, people, table]
+      'INSERT INTO reservations (name, reservation_date, number_of_people, table_id, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, reservation_date, people, table, user_id]
     )
 
     res
@@ -74,6 +85,58 @@ app.get('/reservations/:tableId', async (req, res) => {
     res.json(results.rows)
   } catch (error) {
     console.error('Error fetching reservations:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.get('/users/last', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users ORDER BY created_at DESC LIMIT 5'
+    )
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Error fetching last users:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.get('/food', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM food')
+    res.json(result.rows)
+  } catch (error) {
+    console.error('Error fetching food items:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.post('/food', async (req, res) => {
+  const { name, price, description } = req.body
+  try {
+    const result = await pool.query(
+      'INSERT INTO food (name, price, description) VALUES ($1, $2, $3) RETURNING *',
+      [name, price, description]
+    )
+    res
+      .status(201)
+      .json({
+        message: 'Food item created successfully',
+        foodItem: result.rows[0],
+      })
+  } catch (error) {
+    console.error('Error creating food item:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.delete('/reservations/:id', async (req, res) => {
+  const { id } = req.params
+  try {
+    await pool.query('DELETE FROM reservations WHERE id = $1', [id])
+    res.status(204).send()
+  } catch (error) {
+    console.error('Error cancelling reservation:', error)
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })

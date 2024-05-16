@@ -1,136 +1,148 @@
-import { createContext, useState, useEffect } from 'react'
+import React, { createContext, useState, useEffect } from 'react'
 import axios from 'axios'
-import { Navigate } from 'react-router-dom'
-import { Circle } from 'react-preloaders'
 import config from '../config'
-import style from '../app.module.scss'
 import showErrorMessage from '../utils/showErrorMessage'
-import { jwtDecode } from 'jwt-decode'
 import inMemoryJWT from '../services/inMemoryJWT'
 
+// Создание клиента для аутентификации
 export const AuthClient = axios.create({
   baseURL: `${config.API_URL}/auth`,
   withCredentials: true,
 })
 
-const ResourseClient = axios.create({
-  baseURL: `${config.API_URL}/resource`,
-})
-
-ResourseClient.interceptors.request.use(
-  (config) => {
-    const accessToken = inMemoryJWT.getToken()
-
-    if (accessToken) {
-      config.headers['Authorization'] = `Bearer ${accessToken}`
-    }
-
-    return config
-  },
-  (error) => {
-    Promise.reject(error)
-  }
-)
-
-export const AuthContext = createContext({})
+// Создание контекста
+export const AuthContext = createContext()
 
 const AuthProvider = ({ children }) => {
-  const [isAppReady, setIsAppReady] = useState(false)
   const [isUserLogged, setIsUserLogged] = useState(false)
-  const [data, setData] = useState()
-  const [userRole, setUserRole] = useState(null)
-
-  const handleFetchProtected = () => {
-    ResourseClient.get('/protected')
-      .then((res) => {
-        setData(res.data)
-      })
-      .catch(showErrorMessage)
-  }
-
-  const handleLogOut = () => {
-    AuthClient.post('/logout')
-      .then(() => {
-        inMemoryJWT.deleteToken()
-        setIsUserLogged(false)
-      })
-      .catch(showErrorMessage)
-  }
-
-  const handleSignUp = (data) => {
-    AuthClient.post('/sign-up', data)
-      .then((res) => {
-        const { accessToken, accessTokenExpiration } = res.data
-        inMemoryJWT.setToken(accessToken, accessTokenExpiration)
-        setIsUserLogged(true)
-      })
-      .catch(showErrorMessage)
-  }
-
-  const handleSignIn = (data) => {
-    AuthClient.post('/sign-in', data)
-      .then((res) => {
-        const { accessToken, accessTokenExpiration } = res.data
-        const decoded = jwtDecode(accessToken)
-        inMemoryJWT.setToken(accessToken, accessTokenExpiration)
-        setIsUserLogged(true)
-        setUserRole(decoded.role)
-      })
-      .catch(showErrorMessage)
-  }
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
+    const token = inMemoryJWT.getToken()
+    if (token) {
+      AuthClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    }
+
+    // Логика обновления токена
     AuthClient.post('/refresh')
       .then((res) => {
-        const { accessToken, accessTokenExpiration } = res.data
-        const decoded = jwtDecode(accessToken)
+        const { accessToken, accessTokenExpiration, user } = res.data
         inMemoryJWT.setToken(accessToken, accessTokenExpiration)
+        AuthClient.defaults.headers.common[
+          'Authorization'
+        ] = `Bearer ${accessToken}`
         setIsUserLogged(true)
-        setUserRole(decoded.role) // Обновление роли при обновлении токена
-        setIsAppReady(true)
+        setUser(user)
       })
       .catch(() => {
-        setIsAppReady(true)
         setIsUserLogged(false)
-        setUserRole(null)
+        setUser(null)
       })
   }, [])
 
-  useEffect(() => {
-    const handlePersistedLogOut = (event) => {
-      if (event.key === config.LOGOUT_STORAGE_KEY) {
-        inMemoryJWT.deleteToken()
-        setIsUserLogged(false)
-      }
+  const handleSignIn = async (data) => {
+    try {
+      const response = await AuthClient.post('/sign-in', data)
+      const { accessToken, accessTokenExpiration, user } = response.data
+      inMemoryJWT.setToken(accessToken, accessTokenExpiration)
+      AuthClient.defaults.headers.common[
+        'Authorization'
+      ] = `Bearer ${accessToken}`
+      setIsUserLogged(true)
+      setUser(user)
+    } catch (error) {
+      showErrorMessage(error)
     }
+  }
 
-    window.addEventListener('storage', handlePersistedLogOut)
-
-    return () => {
-      window.removeEventListener('storage', handlePersistedLogOut)
+  const handleSignUp = async (data) => {
+    try {
+      const response = await AuthClient.post('/sign-up', data)
+      const { accessToken, accessTokenExpiration, user } = response.data
+      inMemoryJWT.setToken(accessToken, accessTokenExpiration)
+      AuthClient.defaults.headers.common[
+        'Authorization'
+      ] = `Bearer ${accessToken}`
+      setIsUserLogged(true)
+      setUser(user)
+    } catch (error) {
+      showErrorMessage(error)
     }
-  }, [])
+  }
+
+  const handleLogOut = async () => {
+    try {
+      await AuthClient.post('/logout')
+      inMemoryJWT.deleteToken()
+      delete AuthClient.defaults.headers.common['Authorization']
+      setIsUserLogged(false)
+      setUser(null)
+    } catch (error) {
+      showErrorMessage(error)
+    }
+  }
+
+  const updateUserInfo = async (data) => {
+    try {
+      const response = await AuthClient.put('/user', data)
+      setUser(response.data.user)
+    } catch (error) {
+      showErrorMessage(error)
+    }
+  }
+
+  const getUserReservations = async () => {
+    try {
+      const response = await AuthClient.get('/reservations/user')
+      return response.data.reservations
+    } catch (error) {
+      showErrorMessage(error)
+    }
+  }
+
+  const cancelReservation = async (id) => {
+    try {
+      await AuthClient.delete(`/reservations/${id}`)
+    } catch (error) {
+      showErrorMessage(error)
+    }
+  }
+
+  const createUsers = async (users) => {
+    try {
+      const response = await AuthClient.post('/create-users', { users })
+      return response.data
+    } catch (error) {
+      showErrorMessage(error)
+      return []
+    }
+  }
+
+  const getActiveReservations = async () => {
+    try {
+      const response = await AuthClient.get('/active-reservations')
+      return response.data
+    } catch (error) {
+      showErrorMessage(error)
+    }
+  }
 
   return (
     <AuthContext.Provider
       value={{
-        data,
-        handleFetchProtected,
-        handleSignUp,
-        handleSignIn,
-        handleLogOut,
         isUserLogged,
-        isAppReady,
-        userRole,
+        user,
+        handleSignIn,
+        handleSignUp,
+        handleLogOut,
+        updateUserInfo,
+        getUserReservations,
+        cancelReservation,
+        createUsers,
+        getActiveReservations,
       }}
     >
-      {isAppReady ? (
-        children
-      ) : (
-        <div className={style.centered}>
-          <Circle />
-        </div>
-      )}
+      {children}
     </AuthContext.Provider>
   )
 }

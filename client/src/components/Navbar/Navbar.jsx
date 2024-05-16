@@ -1,15 +1,15 @@
 import React, { useContext } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom' // Используем useNavigate вместо useHistory
+import { useNavigate, useLocation } from 'react-router-dom'
 import styles from './navbar.module.css'
 import Button from '../../components/Button/Button'
 import { AuthContext } from '../../context/AuthContext'
 
 export default function Navbar() {
-  const { userRole, handleLogOut } = useContext(AuthContext)
+  const { user, handleLogOut } = useContext(AuthContext)
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isAdmin = userRole === 1
+  const isAdmin = user && user.role === 1
   const onAdminPage = location.pathname === '/admin'
 
   const handleAdminClick = () => {
