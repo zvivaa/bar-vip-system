@@ -130,6 +130,41 @@ app.post('/food', async (req, res) => {
   }
 })
 
+app.put('/food/:id', async (req, res) => {
+  const { id } = req.params
+  const { name, price, description } = req.body
+  try {
+    const result = await pool.query(
+      'UPDATE food SET name = $1, price = $2, description = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
+      [name, price, description, id]
+    )
+    res.json({
+      message: 'Food item updated successfully',
+      foodItem: result.rows[0],
+    })
+  } catch (error) {
+    console.error('Error updating food item:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.delete('/food/:id', async (req, res) => {
+  const { id } = req.params
+  try {
+    const result = await pool.query(
+      'DELETE FROM food WHERE id = $1 RETURNING *',
+      [id]
+    )
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Food item not found' })
+    }
+    res.status(204).send()
+  } catch (error) {
+    console.error('Error deleting food item:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
 app.delete('/reservations/:id', async (req, res) => {
   const { id } = req.params
   try {
@@ -140,3 +175,87 @@ app.delete('/reservations/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })
+
+// New routes for user profile and reservations management
+app.get('/user/profile', TokenService.checkAccess, async (req, res) => {
+  const userId = req.user.id
+  try {
+    const result = await pool.query(
+      'SELECT name, phone FROM users WHERE id = $1',
+      [userId]
+    )
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error fetching user profile:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.put('/user/profile', TokenService.checkAccess, async (req, res) => {
+  const userId = req.user.id
+  const { name, phone } = req.body
+  try {
+    const result = await pool.query(
+      'UPDATE users SET name = $1, phone = $2 WHERE id = $3 RETURNING *',
+      [name, phone, userId]
+    )
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error updating user profile:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.get('/user/reservation', TokenService.checkAccess, async (req, res) => {
+  const userId = req.user.id
+  try {
+    const result = await pool.query(
+      'SELECT * FROM reservations WHERE user_id = $1',
+      [userId]
+    )
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error fetching user reservation:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.put('/user/reservation/:id', TokenService.checkAccess, async (req, res) => {
+  const userId = req.user.id
+  const { id } = req.params
+  const { name, date, time, people, table } = req.body
+  const reservation_date = `${date} ${time}`
+
+  try {
+    const result = await pool.query(
+      'UPDATE reservations SET name = $1, reservation_date = $2, number_of_people = $3, table_id = $4 WHERE id = $5 AND user_id = $6 RETURNING *',
+      [name, reservation_date, people, table, id, userId]
+    )
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error updating reservation:', error)
+    res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.delete(
+  '/user/reservation/:id',
+  TokenService.checkAccess,
+  async (req, res) => {
+    const userId = req.user.id
+    const { id } = req.params
+    try {
+      const result = await pool.query(
+        'DELETE FROM reservations WHERE id = $1 AND user_id = $2',
+        [id, userId]
+      )
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Reservation not found' })
+      }
+      res.status(204).send()
+    } catch (error) {
+      console.error('Error deleting reservation:', error)
+      res.status(500).json({ error: 'Internal Server Error' })
+    }
+  }
+)

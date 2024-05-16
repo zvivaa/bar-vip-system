@@ -20,9 +20,7 @@ const App = () => {
             <>
               <Route path="demo" element={<Demo />} />
               <Route path="profile" element={<Profile />} />
-              {user && user.role === 1 && (
-                <Route path="admin" element={<Admin />} />
-              )}
+              <Route path="admin" element={<Admin />} />
             </>
           ) : (
             <>

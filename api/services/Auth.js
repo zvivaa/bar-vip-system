@@ -1,11 +1,14 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv'
 import TokenService from './Token.js'
 import { NotFound, Forbidden, Conflict, Unauthorized } from '../utils/Errors.js'
 import RefreshSessionsRepository from '../repositories/RefreshSession.js'
 import UserRepository from '../repositories/User.js'
 import ReservationRepository from '../repositories/ReservationRepository.js'
 import { ACCESS_TOKEN_EXPIRATION } from '../constants.js'
+
+dotenv.config()
 
 class AuthService {
   static async signIn({ userName, password, fingerprint }) {
@@ -45,37 +48,14 @@ class AuthService {
     }
   }
 
-  static async signUp({ userName, password, fingerprint, role }) {
-    const userData = await UserRepository.getUserData(userName)
-
-    if (userData) {
-      throw new Conflict('Пользователь с таким именем уже существует')
-    }
-
+  static async signUp(user) {
+    const { userName, password, role } = user
     const hashedPassword = bcrypt.hashSync(password, 8)
-
-    const { id } = await UserRepository.createUser({
+    return await UserRepository.createUser({
       userName,
-      hashedPassword,
+      password: hashedPassword,
       role,
     })
-
-    const payload = { id, userName, role }
-
-    const accessToken = await TokenService.generateAccessToken(payload)
-    const refreshToken = await TokenService.generateRefreshToken(payload)
-
-    await RefreshSessionsRepository.createRefreshSession({
-      id,
-      refreshToken,
-      fingerprint,
-    })
-
-    return {
-      accessToken,
-      refreshToken,
-      accessTokenExpiration: ACCESS_TOKEN_EXPIRATION,
-    }
   }
 
   static async logOut(refreshToken) {
@@ -84,7 +64,7 @@ class AuthService {
 
   static async refresh({ fingerprint, currentRefreshToken }) {
     if (!currentRefreshToken) {
-      throw new Unauthorized()
+      throw new Unauthorized('No refresh token provided')
     }
 
     const refreshSession = await RefreshSessionsRepository.getRefreshSession(
@@ -92,12 +72,12 @@ class AuthService {
     )
 
     if (!refreshSession) {
-      throw new Unauthorized()
+      throw new Unauthorized('Refresh session not found')
     }
 
     if (refreshSession.finger_print !== fingerprint.hash) {
-      console.log('Попытка несанкционированного обновления токенов!')
-      throw new Forbidden()
+      console.log('Attempted unauthorized token refresh!')
+      throw new Forbidden('Fingerprint mismatch')
     }
 
     await RefreshSessionsRepository.deleteRefreshSession(currentRefreshToken)
@@ -106,16 +86,17 @@ class AuthService {
     try {
       payload = await TokenService.verifyRefreshToken(currentRefreshToken)
     } catch (error) {
-      throw new Forbidden(error)
+      throw new Forbidden('Invalid refresh token')
     }
 
-    const {
-      id,
-      role,
-      name: userName,
-    } = await UserRepository.getUserData(payload.userName)
+    const user = await UserRepository.getUserData(payload.user)
+    if (!user) {
+      throw new Unauthorized('User not found')
+    }
 
-    const actualPayload = { id, userName, role }
+    const { id, role, name: userName } = user
+
+    const actualPayload = { id, user: userName, role }
 
     const accessToken = await TokenService.generateAccessToken(actualPayload)
     const refreshToken = await TokenService.generateRefreshToken(actualPayload)
@@ -129,7 +110,7 @@ class AuthService {
     return {
       accessToken,
       refreshToken,
-      accessTokenExpiration: ACCESS_TOKEN_EXPIRATION,
+      accessTokenExpiration: process.env.ACCESS_TOKEN_EXPIRATION,
     }
   }
 

@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { Table, Button, Modal, Form, Input, Select, List } from 'antd'
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  List,
+  Dropdown,
+  Menu,
+  message,
+} from 'antd'
 import { AuthContext } from '../context/AuthContext'
 import { saveAs } from 'file-saver'
 import * as XLSX from 'xlsx'
 import axios from 'axios'
 import config from '../config'
+import style from './admin.module.css'
 
 const Admin = () => {
   const [users, setUsers] = useState([])
@@ -15,7 +27,10 @@ const Admin = () => {
     useState(false)
   const [isEmployeeModalVisible, setIsEmployeeModalVisible] = useState(false)
   const [isFoodModalVisible, setIsFoodModalVisible] = useState(false)
+  const [isFoodEditModalVisible, setIsFoodEditModalVisible] = useState(false)
+  const [editingFoodItem, setEditingFoodItem] = useState(null)
   const [form] = Form.useForm()
+  const [editForm] = Form.useForm()
   const { createUsers, getActiveReservations } = useContext(AuthContext)
 
   useEffect(() => {
@@ -93,8 +108,63 @@ const Admin = () => {
     }
   }
 
+  const handleDeleteFoodItem = async (id) => {
+    try {
+      await axios.delete(`${config.API_URL}/food/${id}`)
+      fetchFoodItems()
+      message.success('Удаление прошло успешно')
+    } catch (error) {
+      console.error('Error deleting food item:', error)
+      message.error('Failed to delete food item')
+    }
+  }
+
+  const handleEditFoodItem = (foodItem) => {
+    setEditingFoodItem(foodItem)
+    editForm.setFieldsValue(foodItem)
+    setIsFoodEditModalVisible(true)
+  }
+
+  const handleUpdateFoodItem = async (values) => {
+    try {
+      await axios.put(`${config.API_URL}/food/${editingFoodItem.id}`, values)
+      fetchFoodItems()
+      setIsFoodEditModalVisible(false)
+      message.success('Информация о еде была обновлена')
+    } catch (error) {
+      console.error('Error updating food item:', error)
+      message.error('Failed to update food item')
+    }
+  }
+
+  const foodColumns = [
+    { title: 'Название', dataIndex: 'name', key: 'name' },
+    { title: 'Цена', dataIndex: 'price', key: 'price' },
+    { title: 'Описание', dataIndex: 'description', key: 'description' },
+    {
+      title: 'Действие',
+      key: 'action',
+      render: (_, record) => (
+        <Dropdown
+          overlay={
+            <Menu>
+              <Menu.Item onClick={() => handleEditFoodItem(record)}>
+                Обновить
+              </Menu.Item>
+              <Menu.Item onClick={() => handleDeleteFoodItem(record.id)}>
+                Удалить
+              </Menu.Item>
+            </Menu>
+          }
+        >
+          <Button>Действие</Button>
+        </Dropdown>
+      ),
+    },
+  ]
+
   const userColumns = [
-    { title: 'Имя пользователя', dataIndex: 'name', key: 'name' },
+    { title: 'Имя пользователя', dataIndex: 'userName', key: 'userName' },
     { title: 'Пароль', dataIndex: 'password', key: 'password' },
   ]
 
@@ -118,25 +188,16 @@ const Admin = () => {
     },
   ]
 
-  const foodColumns = [
-    { title: 'Название', dataIndex: 'name', key: 'name' },
-    { title: 'Цена', dataIndex: 'price', key: 'price' },
-    { title: 'Описание', dataIndex: 'description', key: 'description' },
-  ]
-
   return (
-    <div className="container">
+    <div className={style.container}>
       <Button type="primary" onClick={() => setIsUserModalVisible(true)}>
         Создать пользователей
       </Button>
-      <Button onClick={() => setIsReservationModalVisible(true)}>
-        Список броней
-      </Button>
-      <Button type="primary" onClick={() => setIsEmployeeModalVisible(true)}>
-        Создание работников
-      </Button>
       <Button type="primary" onClick={() => setIsFoodModalVisible(true)}>
         Управление меню еды
+      </Button>
+      <Button onClick={() => setIsReservationModalVisible(true)}>
+        Список броней
       </Button>
 
       <Modal
@@ -148,83 +209,11 @@ const Admin = () => {
         <Button onClick={handleCreateRandomUsers}>
           Создать 5 пользователей
         </Button>
-        <Button onClick={handleDownloadExcel}>Выгрузить в Excel</Button>
+        <Button className="ml-3" onClick={handleDownloadExcel}>
+          Выгрузить в Excel
+        </Button>
         <Form form={form} layout="vertical">
           <Form.List name="users">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name, fieldKey, ...restField }) => (
-                  <div key={key}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'name']}
-                      fieldKey={[fieldKey, 'name']}
-                      label="Имя пользователя"
-                      rules={[
-                        { required: true, message: 'Введите имя пользователя' },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'password']}
-                      fieldKey={[fieldKey, 'password']}
-                      label="Пароль"
-                      rules={[{ required: true, message: 'Введите пароль' }]}
-                    >
-                      <Input.Password />
-                    </Form.Item>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'role']}
-                      fieldKey={[fieldKey, 'role']}
-                      label="Роль"
-                      rules={[{ required: true, message: 'Выберите роль' }]}
-                    >
-                      <Select>
-                        <Select.Option value="1">Администратор</Select.Option>
-                        <Select.Option value="2">Менеджер</Select.Option>
-                        <Select.Option value="3">Пользователь</Select.Option>
-                      </Select>
-                    </Form.Item>
-                    <Button type="dashed" onClick={() => remove(name)}>
-                      Удалить
-                    </Button>
-                  </div>
-                ))}
-                <Button type="dashed" onClick={() => add()}>
-                  Добавить пользователя
-                </Button>
-              </>
-            )}
-          </Form.List>
-        </Form>
-        <h3>Последние созданные пользователи</h3>
-        <Table columns={userColumns} dataSource={users} rowKey="id" />
-      </Modal>
-
-      <Modal
-        title="Список броней"
-        visible={isReservationModalVisible}
-        onCancel={() => setIsReservationModalVisible(false)}
-        footer={null}
-      >
-        <Table
-          columns={reservationColumns}
-          dataSource={reservations}
-          rowKey="id"
-        />
-      </Modal>
-
-      <Modal
-        title="Создание работников"
-        visible={isEmployeeModalVisible}
-        onCancel={() => setIsEmployeeModalVisible(false)}
-        onOk={handleCreateUsers}
-      >
-        <Form form={form} layout="vertical">
-          <Form.List name="employees">
             {(fields, { add, remove }) => (
               <>
                 {fields.map(({ key, name, fieldKey, ...restField }) => (
@@ -267,13 +256,25 @@ const Admin = () => {
                     </Button>
                   </div>
                 ))}
-                <Button type="dashed" onClick={() => add()}>
-                  Добавить работника
-                </Button>
               </>
             )}
           </Form.List>
         </Form>
+        <h3>Последние созданные пользователи</h3>
+        <Table columns={userColumns} dataSource={users} rowKey="id" />
+      </Modal>
+
+      <Modal
+        title="Список броней"
+        visible={isReservationModalVisible}
+        onCancel={() => setIsReservationModalVisible(false)}
+        footer={null}
+      >
+        <Table
+          columns={reservationColumns}
+          dataSource={reservations}
+          rowKey="id"
+        />
       </Modal>
 
       <Modal
@@ -316,6 +317,41 @@ const Admin = () => {
         </Form>
         <h3>Меню еды</h3>
         <Table columns={foodColumns} dataSource={foodItems} rowKey="id" />
+      </Modal>
+
+      <Modal
+        title="Обновить еду"
+        visible={isFoodEditModalVisible}
+        onCancel={() => setIsFoodEditModalVisible(false)}
+        onOk={editForm.submit}
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleUpdateFoodItem}>
+          <Form.Item
+            name="name"
+            label="Название"
+            rules={[
+              { required: true, message: 'Пожалуйста, введите название' },
+            ]}
+          >
+            <Input placeholder="Введите название" />
+          </Form.Item>
+          <Form.Item
+            name="price"
+            label="Цена"
+            rules={[{ required: true, message: 'Пожалуйста, введите цену' }]}
+          >
+            <Input placeholder="Введите цену" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Описание"
+            rules={[
+              { required: true, message: 'Пожалуйста, введите описание' },
+            ]}
+          >
+            <Input placeholder="Введите описание" />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   )

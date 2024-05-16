@@ -4,7 +4,7 @@ CREATE TABLE users(
     password VARCHAR(60) NOT NULL,
     role SMALLINT NOT NULL,
     real_name VARCHAR(25),
-    phone VARCHAR(13),
+    phone VARCHAR(13)
 );
 
 CREATE TABLE refresh_sessions(

@@ -20,6 +20,10 @@ export default function Navbar() {
     navigate('/demo')
   }
 
+  const handleProfileClick = () => {
+    navigate('/profile')
+  }
+
   return (
     <nav className={styles.navbar}>
       <ul className={styles.navbarList}>
@@ -45,12 +49,11 @@ export default function Navbar() {
         </li>
       </ul>
       <div>
-        {isAdmin && !onAdminPage && (
-          <Button onClick={handleAdminClick}>Admin</Button>
-        )}
+        <Button onClick={handleAdminClick}>Панель</Button>
         {isAdmin && onAdminPage && (
           <Button onClick={handleBackClick}>Вернуться</Button>
         )}
+        <Button onClick={handleProfileClick}>Личный кабинет</Button>
         <Button onClick={handleLogOut}>Выйти</Button>
       </div>
     </nav>

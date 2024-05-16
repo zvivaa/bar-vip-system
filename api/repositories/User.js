@@ -14,6 +14,16 @@ class UserRepository {
     }
   }
 
+  static async findById(id) {
+    try {
+      const result = await pool.query('SELECT * FROM users WHERE id = $1', [id])
+      return result.rows[0]
+    } catch (error) {
+      console.error('Error finding user by ID:', error)
+      throw error
+    }
+  }
+
   static async getUserData(userName) {
     const response = await pool.query('SELECT * FROM users WHERE name = $1', [
       userName,

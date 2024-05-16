@@ -17,15 +17,11 @@ class AuthController {
     }
   }
   static async signUp(req, res) {
-    const { userName, password, role } = req.body
-    const { fingerprint } = req
     try {
-      const { accessToken, refreshToken, accessTokenExpiration, user } =
-        await AuthService.signUp({ userName, password, role, fingerprint })
-      res.cookie('refreshToken', refreshToken, COOKIE_SETTINGS.REFRESH_TOKEN)
-
-      return res.status(200).json({ accessToken, accessTokenExpiration, user })
+      const user = await AuthService.signUp(req.body)
+      return res.status(201).json(user)
     } catch (err) {
+      console.error('Error signing up user:', err)
       return ErrorsUtils.catchError(res, err)
     }
   }
@@ -53,7 +49,10 @@ class AuthController {
           fingerprint,
         })
 
-      res.cookie('refreshToken', refreshToken, COOKIE_SETTINGS.REFRESH_TOKEN)
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      })
 
       return res.status(200).json({ accessToken, accessTokenExpiration })
     } catch (err) {

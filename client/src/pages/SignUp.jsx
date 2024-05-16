@@ -1,36 +1,36 @@
-import { useForm, Controller } from "react-hook-form";
-import style from "./style.module.scss";
-import { AuthContext } from "../context/AuthContext";
-import { useContext } from "react";
-import { yupResolver } from "@hookform/resolvers/yup";
-import { signUpSchema } from "./validtionSchemas";
-import Select from "../components/Select/Select";
-import Field from "../components/Field/Field";
-import Button from "../components/Button/Button";
+import { useForm, Controller } from 'react-hook-form'
+import style from './style.module.scss'
+import { AuthContext } from '../context/AuthContext'
+import { useContext } from 'react'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { signUpSchema } from './validtionSchemas'
+import Select from '../components/Select/Select'
+import Field from '../components/Field/Field'
+import Button from '../components/Button/Button'
 
 const defaultValues = {
-  userName: "",
-  password: "",
+  userName: '',
+  password: '',
   role: 1,
-};
+}
 
 const rolesList = [
   {
     id: 1,
-    title: "Администратор",
+    title: 'Администратор',
   },
   {
     id: 2,
-    title: "Модератор",
+    title: 'Модератор',
   },
   {
     id: 3,
-    title: "Пользователь",
+    title: 'Пользователь',
   },
-];
+]
 
 export default function SignUp() {
-  const { handleSignUp } = useContext(AuthContext);
+  const { handleSignUp } = useContext(AuthContext)
 
   const {
     register,
@@ -40,7 +40,7 @@ export default function SignUp() {
   } = useForm({
     defaultValues,
     resolver: yupResolver(signUpSchema),
-  });
+  })
 
   return (
     <form className={style.wrapper} onSubmit={handleSubmit(handleSignUp)}>
@@ -72,5 +72,5 @@ export default function SignUp() {
         Зарегистрироваться
       </Button>
     </form>
-  );
+  )
 }
