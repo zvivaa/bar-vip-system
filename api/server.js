@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import Fingerprint from 'express-fingerprint'
+import bodyParser from 'body-parser'
 import AuthRouter from './routers/Auth.js'
 import TokenService from './services/Token.js'
 import cookieParser from 'cookie-parser'
@@ -14,6 +15,7 @@ const app = express()
 
 app.use(cookieParser())
 app.use(express.json())
+app.use(bodyParser.json())
 
 const allowedOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173']
 app.use(
@@ -118,12 +120,10 @@ app.post('/food', async (req, res) => {
       'INSERT INTO food (name, price, description) VALUES ($1, $2, $3) RETURNING *',
       [name, price, description]
     )
-    res
-      .status(201)
-      .json({
-        message: 'Food item created successfully',
-        foodItem: result.rows[0],
-      })
+    res.status(201).json({
+      message: 'Food item created successfully',
+      foodItem: result.rows[0],
+    })
   } catch (error) {
     console.error('Error creating food item:', error)
     res.status(500).json({ error: 'Internal Server Error' })

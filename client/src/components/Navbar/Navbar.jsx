@@ -9,8 +9,8 @@ export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const isAdmin = user && user.role === 1
   const onAdminPage = location.pathname === '/admin'
+  const onProfilePage = location.pathname === '/profile'
 
   const handleAdminClick = () => {
     navigate('/admin')
@@ -18,6 +18,10 @@ export default function Navbar() {
 
   const handleBackClick = () => {
     navigate('/demo')
+  }
+
+  const handleProfileClick = () => {
+    navigate('/profile')
   }
 
   return (
@@ -45,11 +49,14 @@ export default function Navbar() {
         </li>
       </ul>
       <div>
-        {isAdmin && !onAdminPage && (
-          <Button onClick={handleAdminClick}>Admin</Button>
+        {onAdminPage && <Button onClick={handleBackClick}>Вернуться</Button>}
+        {onProfilePage && <Button onClick={handleBackClick}>Вернуться</Button>}
+        {user?.role === 1 && !onAdminPage && (
+          <Button onClick={handleAdminClick}>Администрирование</Button>
         )}
-        {isAdmin && onAdminPage && (
-          <Button onClick={handleBackClick}>Вернуться</Button>
+
+        {!onProfilePage && (
+          <Button onClick={handleProfileClick}>Личный кабинет</Button>
         )}
         <Button onClick={handleLogOut}>Выйти</Button>
       </div>

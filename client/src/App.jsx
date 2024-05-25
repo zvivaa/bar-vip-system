@@ -11,6 +11,7 @@ import Navbar from './components/Navbar/Navbar'
 
 const App = () => {
   const { isUserLogged, user } = useContext(AuthContext)
+
   return (
     <SnackbarProvider>
       <BrowserRouter>
@@ -20,9 +21,10 @@ const App = () => {
             <>
               <Route path="demo" element={<Demo />} />
               <Route path="profile" element={<Profile />} />
-              {user && user.role === 1 && (
-                <Route path="admin" element={<Admin />} />
-              )}
+              <Route
+                path="admin"
+                element={user?.role === 1 ? <Admin /> : <Navigate to="/demo" />}
+              />
             </>
           ) : (
             <>

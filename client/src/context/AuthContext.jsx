@@ -15,6 +15,7 @@ export const AuthContext = createContext()
 
 const AuthProvider = ({ children }) => {
   const [isUserLogged, setIsUserLogged] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
 
   useEffect(() => {
@@ -31,27 +32,53 @@ const AuthProvider = ({ children }) => {
         AuthClient.defaults.headers.common[
           'Authorization'
         ] = `Bearer ${accessToken}`
+        setIsAuthenticated(true)
         setIsUserLogged(true)
         setUser(user)
       })
       .catch(() => {
+        setIsAuthenticated(false)
         setIsUserLogged(false)
         setUser(null)
       })
   }, [])
 
-  const handleSignIn = async (data) => {
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await AuthClient.get('/user')
+        setUser(response.data)
+        setIsAuthenticated(true)
+        setIsUserLogged(true)
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        setIsAuthenticated(false)
+      }
+    }
+
+    if (isAuthenticated) {
+      fetchUserData()
+    }
+  }, [isAuthenticated])
+
+  const handleSignIn = async (credentials) => {
     try {
-      const response = await AuthClient.post('/sign-in', data)
-      const { accessToken, accessTokenExpiration, user } = response.data
-      inMemoryJWT.setToken(accessToken, accessTokenExpiration)
+      const response = await AuthClient.post('/sign-in', credentials)
+      const { accessToken, refreshToken } = response.data
+
       AuthClient.defaults.headers.common[
         'Authorization'
       ] = `Bearer ${accessToken}`
+      document.cookie = `refreshToken=${refreshToken}; path=/`
+      console.log('Sign in successful:', response.data.user)
+      setIsAuthenticated(true)
       setIsUserLogged(true)
       setUser(user)
     } catch (error) {
-      showErrorMessage(error)
+      console.error('Error signing in:', error)
+      setIsAuthenticated(false)
+      setIsUserLogged(false)
+      setUser(null)
     }
   }
 
@@ -77,15 +104,6 @@ const AuthProvider = ({ children }) => {
       delete AuthClient.defaults.headers.common['Authorization']
       setIsUserLogged(false)
       setUser(null)
-    } catch (error) {
-      showErrorMessage(error)
-    }
-  }
-
-  const updateUserInfo = async (data) => {
-    try {
-      const response = await AuthClient.put('/user', data)
-      setUser(response.data.user)
     } catch (error) {
       showErrorMessage(error)
     }
@@ -127,6 +145,15 @@ const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateUser = async (updatedData) => {
+    try {
+      const response = await AuthClient.put('/update-user', updatedData)
+      setUser(response.data)
+    } catch (error) {
+      console.error('Update user error', error)
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -135,11 +162,11 @@ const AuthProvider = ({ children }) => {
         handleSignIn,
         handleSignUp,
         handleLogOut,
-        updateUserInfo,
         getUserReservations,
         cancelReservation,
         createUsers,
         getActiveReservations,
+        updateUser,
       }}
     >
       {children}

@@ -1,0 +1,11 @@
+.buttonContainer {
+  display: flex;
+  gap: 2rem;
+  padding: 25px;
+  background-color: rgba(154, 154, 154, 0.394);
+  width: 100%;
+}
+.insideButton {
+  gap: 10px;
+  display: flex;
+}

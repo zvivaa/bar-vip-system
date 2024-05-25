@@ -6,6 +6,8 @@ import * as XLSX from 'xlsx'
 import axios from 'axios'
 import config from '../config'
 
+import style from './admin.module.css'
+
 const Admin = () => {
   const [users, setUsers] = useState([])
   const [reservations, setReservations] = useState([])
@@ -13,7 +15,6 @@ const Admin = () => {
   const [isUserModalVisible, setIsUserModalVisible] = useState(false)
   const [isReservationModalVisible, setIsReservationModalVisible] =
     useState(false)
-  const [isEmployeeModalVisible, setIsEmployeeModalVisible] = useState(false)
   const [isFoodModalVisible, setIsFoodModalVisible] = useState(false)
   const [form] = Form.useForm()
   const { createUsers, getActiveReservations } = useContext(AuthContext)
@@ -87,7 +88,6 @@ const Admin = () => {
     try {
       await axios.post(`${config.API_URL}/food`, values)
       fetchFoodItems()
-      setIsFoodModalVisible(false)
     } catch (error) {
       console.error('Error creating food item:', error)
     }
@@ -126,29 +126,29 @@ const Admin = () => {
 
   return (
     <div className="container">
-      <Button type="primary" onClick={() => setIsUserModalVisible(true)}>
-        Создать пользователей
-      </Button>
-      <Button onClick={() => setIsReservationModalVisible(true)}>
-        Список броней
-      </Button>
-      <Button type="primary" onClick={() => setIsEmployeeModalVisible(true)}>
-        Создание работников
-      </Button>
-      <Button type="primary" onClick={() => setIsFoodModalVisible(true)}>
-        Управление меню еды
-      </Button>
-
+      <div className={style.buttonContainer}>
+        <Button type="primary" onClick={() => setIsUserModalVisible(true)}>
+          Создать пользователей
+        </Button>
+        <Button onClick={() => setIsReservationModalVisible(true)}>
+          Список броней
+        </Button>
+        <Button type="primary" onClick={() => setIsFoodModalVisible(true)}>
+          Управление меню еды
+        </Button>
+      </div>
       <Modal
         title="Создать пользователей"
         visible={isUserModalVisible}
         onCancel={() => setIsUserModalVisible(false)}
         onOk={handleCreateUsers}
       >
-        <Button onClick={handleCreateRandomUsers}>
-          Создать 5 пользователей
-        </Button>
-        <Button onClick={handleDownloadExcel}>Выгрузить в Excel</Button>
+        <div className={style.insideButton}>
+          <Button onClick={handleCreateRandomUsers}>
+            Создать 5 пользователей
+          </Button>
+          <Button onClick={handleDownloadExcel}>Выгрузить в Excel</Button>
+        </div>
         <Form form={form} layout="vertical">
           <Form.List name="users">
             {(fields, { add, remove }) => (
@@ -193,9 +193,6 @@ const Admin = () => {
                     </Button>
                   </div>
                 ))}
-                <Button type="dashed" onClick={() => add()}>
-                  Добавить пользователя
-                </Button>
               </>
             )}
           </Form.List>
@@ -215,65 +212,6 @@ const Admin = () => {
           dataSource={reservations}
           rowKey="id"
         />
-      </Modal>
-
-      <Modal
-        title="Создание работников"
-        visible={isEmployeeModalVisible}
-        onCancel={() => setIsEmployeeModalVisible(false)}
-        onOk={handleCreateUsers}
-      >
-        <Form form={form} layout="vertical">
-          <Form.List name="employees">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name, fieldKey, ...restField }) => (
-                  <div key={key}>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'userName']}
-                      fieldKey={[fieldKey, 'userName']}
-                      label="Имя пользователя"
-                      rules={[
-                        { required: true, message: 'Введите имя пользователя' },
-                      ]}
-                    >
-                      <Input />
-                    </Form.Item>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'password']}
-                      fieldKey={[fieldKey, 'password']}
-                      label="Пароль"
-                      rules={[{ required: true, message: 'Введите пароль' }]}
-                    >
-                      <Input.Password />
-                    </Form.Item>
-                    <Form.Item
-                      {...restField}
-                      name={[name, 'role']}
-                      fieldKey={[fieldKey, 'role']}
-                      label="Роль"
-                      rules={[{ required: true, message: 'Выберите роль' }]}
-                    >
-                      <Select>
-                        <Select.Option value="1">Администратор</Select.Option>
-                        <Select.Option value="2">Менеджер</Select.Option>
-                        <Select.Option value="3">Пользователь</Select.Option>
-                      </Select>
-                    </Form.Item>
-                    <Button type="dashed" onClick={() => remove(name)}>
-                      Удалить
-                    </Button>
-                  </div>
-                ))}
-                <Button type="dashed" onClick={() => add()}>
-                  Добавить работника
-                </Button>
-              </>
-            )}
-          </Form.List>
-        </Form>
       </Modal>
 
       <Modal

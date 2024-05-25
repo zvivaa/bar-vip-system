@@ -151,6 +151,10 @@ class AuthService {
   static async getActiveReservations() {
     return await ReservationRepository.getActiveReservations()
   }
+
+  static async getUserData(userId) {
+    return await UserRepository.getUserById(userId)
+  }
 }
 
 export default AuthService

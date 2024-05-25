@@ -25,6 +25,22 @@ class UserRepository {
 
     return response.rows[0]
   }
+
+  static async getUserById(userId) {
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [
+      userId,
+    ])
+    return rows[0]
+  }
+
+  static async updatedUsers(id, updatedData) {
+    const { name, phone } = updatedData
+    const result = await db.query(
+      'UPDATE users SET name = $1, phone = $2 WHERE id = $3 RETURNING *',
+      [name, phone, id]
+    )
+    return result.rows[0]
+  }
 }
 
 export default UserRepository

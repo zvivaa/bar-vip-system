@@ -1,64 +1,76 @@
-// Profile.jsx
-import React, { useContext, useState, useEffect } from 'react'
-import { Form, Input, Button, List } from 'antd'
+import React, { useState, useContext } from 'react'
+import { Modal, Button, Input, Form } from 'antd'
 import { AuthContext } from '../context/AuthContext'
-import { ResourceContext } from '../context/ResourceContext'
 
 const Profile = () => {
-  const { user, updateUserInfo, getUserReservations, cancelReservation } =
-    useContext(AuthContext)
-  const [reservations, setReservations] = useState([])
+  const { user, updateUser } = useContext(AuthContext)
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [form] = Form.useForm()
 
-  useEffect(() => {
-    getUserReservations().then(setReservations)
-  }, [])
+  const showModal = () => {
+    setIsModalVisible(true)
+    form.setFieldsValue({ name: user.name, phone: user.phone })
+  }
 
-  const handleCancelReservation = (id) => {
-    cancelReservation(id).then(() => {
-      setReservations((prev) =>
-        prev.filter((reservation) => reservation.id !== id)
-      )
-    })
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields()
+      updateUser(values)
+      setIsModalVisible(false)
+    } catch (error) {
+      console.error('Validation Failed:', error)
+    }
+  }
+
+  const handleCancel = () => {
+    setIsModalVisible(false)
   }
 
   return (
-    <div className="container">
+    <div style={{ padding: '20px' }}>
       <h2>Личный кабинет</h2>
-      <Form
-        initialValues={{
-          userName: user.userName,
-          phoneNumber: user.phoneNumber,
-        }}
-        onFinish={updateUserInfo}
-      >
-        <Form.Item label="Имя пользователя" name="userName">
-          <Input />
-        </Form.Item>
-        <Form.Item label="Номер телефона" name="phoneNumber">
-          <Input />
-        </Form.Item>
-        <Form.Item label="Пароль" name="password">
-          <Input.Password />
-        </Form.Item>
-        <Button type="primary" htmlType="submit">
-          Обновить
+      <div>
+        <p>
+          <strong>Имя:</strong> {user.name}
+        </p>
+        <p>
+          <strong>Номер телефона:</strong> {user.phone}
+        </p>
+        <Button type="primary" onClick={showModal}>
+          Редактировать
         </Button>
-      </Form>
-      <h3>Список бронирований</h3>
-      <List
-        dataSource={reservations}
-        renderItem={(reservation) => (
-          <List.Item
-            actions={[
-              <Button onClick={() => handleCancelReservation(reservation.id)}>
-                Отменить
-              </Button>,
+      </div>
+
+      <Modal
+        title="Редактировать данные"
+        visible={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="name"
+            label="Имя"
+            rules={[
+              { required: true, message: 'Пожалуйста, введите ваше имя' },
             ]}
           >
-            {reservation.date} - Столик {reservation.table}
-          </List.Item>
-        )}
-      />
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="phone"
+            label="Номер телефона"
+            rules={[
+              {
+                required: true,
+                message: 'Пожалуйста, введите ваш номер телефона',
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

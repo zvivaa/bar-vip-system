@@ -81,6 +81,28 @@ class AuthController {
       return ErrorsUtils.catchError(res, err)
     }
   }
+
+  static async getUser(req, res) {
+    try {
+      const userId = req.user.id
+      const userData = await AuthService.getUserData(userId)
+      return res.status(200).json(userData)
+    } catch (err) {
+      return res.status(500).json({ message: err.message })
+    }
+  }
+
+  static async updateUser(req, res) {
+    const { id } = req.user // предполагается, что id пользователя извлекается из токена
+    const { name, phone } = req.body
+
+    try {
+      const updatedUser = await UserRepository.updateUser(id, { name, phone })
+      res.status(200).json(updatedUser)
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update user' })
+    }
+  }
 }
 
 export default AuthController
