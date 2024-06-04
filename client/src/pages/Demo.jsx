@@ -1,103 +1,58 @@
 import React, { useState } from 'react'
-import { Row, Col, Button, Modal } from 'antd'
 import ReservationForm from '../components/ui/ReservationForm'
-import { format } from 'date-fns'
-import { ru } from 'date-fns/locale'
-import axios from 'axios'
-
+import PreOrderForm from '../components/ui/PreOrderForm'
+import Confirmation from '../components/ui/Confirmation'
 import '../antd/dist/antd.css'
 
-const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return format(date, 'dd.MM, HH:mm', { locale: ru })
-}
-
 const Demo = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false)
-  const [selectedTable, setSelectedTable] = useState(null)
-  const [reservations, setReservations] = useState([])
+  const [step, setStep] = useState(1)
+  const [reservationData, setReservationData] = useState(null)
+  const [preOrderData, setPreOrderData] = useState(null)
 
-  const fetchReservations = async (tableId) => {
-    try {
-      const response = await axios.get(
-        `http://localhost:5000/reservations/${tableId}`
-      )
-      setReservations(response.data)
-    } catch (error) {
-      console.error('Failed to fetch reservations:', error)
-      setReservations([])
-    }
+  const handleReservationNext = (data) => {
+    setReservationData(data)
+    setStep(2)
   }
 
-  const showReservationModal = () => {
-    setIsModalVisible(true)
+  const handlePreOrderNext = (data) => {
+    setPreOrderData(data)
+    setStep(3)
   }
 
-  const handleCancel = () => {
-    setIsModalVisible(false)
-    setSelectedTable(null)
+  const handlePreOrderSkip = () => {
+    setStep(3)
   }
 
-  const handleFinish = () => {
-    setIsModalVisible(false)
-    setSelectedTable(null)
+  const handleConfirm = () => {
+    setStep(1)
+    setReservationData(null)
+    setPreOrderData(null)
   }
 
-  const handleTableSelect = (tableId) => {
-    setSelectedTable(tableId)
-    fetchReservations(tableId)
-    console.log('Выбранный стол:', tableId)
+  const handleBack = () => {
+    setStep(1)
   }
 
   return (
     <div className="container">
-      <div className="leftMenu">
-        <div className="table-list">
-          {/* Пример статического списка. Вы можете сделать его динамическим, исходя из данных. */}
-          {Array.from({ length: 8 }, (_, i) => i + 1).map((tableId) => (
-            <Button
-              key={tableId}
-              style={{ margin: '8px' }}
-              onClick={() => handleTableSelect(tableId)}
-            >
-              Столик {tableId}
-            </Button>
-          ))}
-        </div>
+      <div className="reservBlock">
+        <h1>Бронирование</h1>
+        {step === 1 && <ReservationForm onNext={handleReservationNext} />}
+        {step === 2 && (
+          <PreOrderForm
+            onNext={handlePreOrderNext}
+            onSkip={handlePreOrderSkip}
+          />
+        )}
+        {step === 3 && (
+          <Confirmation
+            reservationData={reservationData}
+            preOrderData={preOrderData}
+            onConfirm={handleConfirm}
+            onBack={handleBack}
+          />
+        )}
       </div>
-      <div className="rightMenu">
-        <p className="mb-6">Информация:</p>
-        <p className="mb-6">Стол №{selectedTable}</p>
-        <div className="reservInfo">
-          {reservations.length > 0 ? (
-            <ul>
-              {reservations.map((res, index) => (
-                <li key={index}>
-                  Бронь на: {formatDate(res.reservation_date)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Нет активных броней.</p>
-          )}
-        </div>
-        <Button
-          type="primary"
-          onClick={showReservationModal}
-          disabled={!selectedTable}
-        >
-          Забронировать столик
-        </Button>
-      </div>
-
-      <Modal
-        title="Форма бронирования столика"
-        visible={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-      >
-        <ReservationForm selectedTable={selectedTable} onClose={handleFinish} />
-      </Modal>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import styles from './navbar.module.css'
 import Button from '../../components/Button/Button'
 import { AuthContext } from '../../context/AuthContext'
+import logo from '../../images/bivo-shop_logo.svg'
 
 export default function Navbar() {
   const { user, handleLogOut } = useContext(AuthContext)
@@ -29,26 +30,11 @@ export default function Navbar() {
       <ul className={styles.navbarList}>
         <li className={styles.navbarItem}>
           <a href="/" className={styles.navbarLink}>
-            Главная
-          </a>
-        </li>
-        <li className={styles.navbarItem}>
-          <a href="/about" className={styles.navbarLink}>
-            О нас
-          </a>
-        </li>
-        <li className={styles.navbarItem}>
-          <a href="/services" className={styles.navbarLink}>
-            Службы
-          </a>
-        </li>
-        <li className={styles.navbarItem}>
-          <a href="/contact" className={styles.navbarLink}>
-            Контакты
+            <img src={logo} width={150} />
           </a>
         </li>
       </ul>
-      <div>
+      <div className={styles.buttonsList}>
         {onAdminPage && <Button onClick={handleBackClick}>Вернуться</Button>}
         {onProfilePage && <Button onClick={handleBackClick}>Вернуться</Button>}
         {user?.role === 1 && !onAdminPage && (

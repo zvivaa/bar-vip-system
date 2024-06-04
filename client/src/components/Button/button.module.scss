@@ -1,18 +1,17 @@
 @import '../../variables.scss';
 
 .button {
-  background-color: $button-white;
+  background-color: $button-dark;
   border: 0;
   border-radius: 5px;
   box-sizing: border-box;
-  color: #000000;
+  color: #ffffff;
   cursor: pointer;
   font-weight: 600;
   outline: none;
   padding: 7px 20px;
   transition: all 300ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
-  margin-left: 15px;
 
   &:disabled {
     pointer-events: none;

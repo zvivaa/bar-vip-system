@@ -12,7 +12,7 @@
 .navbarList {
   list-style: none;
   padding: 0;
-  margin: 15px;
+
   display: flex;
 }
 
@@ -28,4 +28,8 @@
 
 .navbarLink:hover {
   color: #ffd700;
+}
+.buttonsList {
+  display: flex;
+  gap: 5px;
 }

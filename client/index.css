@@ -13,26 +13,26 @@
 .mantine-DatePicker-calendarHeader {
   display: flex;
 }
-.leftMenu {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 65%;
-  height: 100vh;
-  margin-left: 10%;
-}
+
 .rightMenu {
   margin-right: 0;
   margin-left: auto;
-  width: 15;
-  padding: 15px;
-  height: 100vh;
-  background-color: rgba(70, 70, 70, 0.292);
+  width: 100%;
+  padding: 20px 20% 0px 20%;
+}
+.reservBlock {
+  margin-top: 2%;
+  width: 30%;
+}
+.reservBlock h1 {
+  font-size: 30px;
+  font-weight: 500;
+  margin-bottom: 15px;
 }
 .container {
   max-width: 1920px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
 }
 .table-list {
   margin-top: -10%;
@@ -47,10 +47,4 @@
 }
 form ._button_1oj4g_1 {
   margin-left: 0;
-}
-
-.reservInfo {
-  max-width: 218.17px;
-  font-size: 14px;
-  margin-bottom: 15px;
 }

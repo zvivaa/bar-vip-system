@@ -48,24 +48,22 @@ app.listen(PORT, () => {
 })
 
 app.post('/reserve', async (req, res) => {
-  const { name, date, time, people, table, user_id } = req.body
-  const reservation_date = `${date} ${time}`
+  const { name, date, people, phone, user_id } = req.body
+  const reservation_date = `${date} 00:00:00` // Set time to midnight as we are only concerned with the date
 
   try {
     const exists = await pool.query(
-      'SELECT * FROM reservations WHERE reservation_date = $1 AND table_id = $2',
-      [reservation_date, table]
+      'SELECT * FROM reservations WHERE reservation_date = $1 AND user_id = $2',
+      [reservation_date, user_id]
     )
 
     if (exists.rowCount > 0) {
-      return res
-        .status(409)
-        .json({ error: 'Данный стол на это время уже занят' })
+      return res.status(409).json({ error: 'У вас уже есть бронь на эту дату' })
     }
 
     const result = await pool.query(
-      'INSERT INTO reservations (name, reservation_date, number_of_people, table_id, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, reservation_date, people, table, user_id]
+      'INSERT INTO reservations (name, reservation_date, number_of_people, phone, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [name, reservation_date, people, phone, user_id]
     )
 
     res
@@ -73,20 +71,6 @@ app.post('/reserve', async (req, res) => {
       .json({ message: 'Бронь успешно создана', reservation: result.rows[0] })
   } catch (error) {
     console.error('Error saving reservation:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
-  }
-})
-
-app.get('/reservations/:tableId', async (req, res) => {
-  const { tableId } = req.params
-  try {
-    const results = await pool.query(
-      'SELECT reservation_date FROM reservations WHERE table_id = $1 ORDER BY reservation_date ASC',
-      [tableId]
-    )
-    res.json(results.rows)
-  } catch (error) {
-    console.error('Error fetching reservations:', error)
     res.status(500).json({ error: 'Internal Server Error' })
   }
 })
