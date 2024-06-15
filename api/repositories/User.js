@@ -34,10 +34,10 @@ class UserRepository {
   }
 
   static async updatedUsers(id, updatedData) {
-    const { name, phone } = updatedData
+    const { name, phone, email } = updatedData
     const result = await db.query(
-      'UPDATE users SET name = $1, phone = $2 WHERE id = $3 RETURNING *',
-      [name, phone, id]
+      'UPDATE users SET name = $1, phone = $2, emai; = $3 WHERE id = $4 RETURNING *',
+      [name, phone, email, id]
     )
     return result.rows[0]
   }

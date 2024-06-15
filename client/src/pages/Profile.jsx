@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react'
-import { Modal, Button, Input, Form } from 'antd'
+import { Modal, Button, Input, Form, message } from 'antd'
 import { AuthContext } from '../context/AuthContext'
+import axios from 'axios'
 
 const Profile = () => {
   const { user, updateUser } = useContext(AuthContext)
@@ -9,16 +10,32 @@ const Profile = () => {
 
   const showModal = () => {
     setIsModalVisible(true)
-    form.setFieldsValue({ name: user.name, phone: user.phone })
+    form.setFieldsValue({ name: user.real_name, phone: user.phone })
   }
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields()
-      updateUser(values)
-      setIsModalVisible(false)
+      const updatedUserData = {
+        ...values,
+        user_id: user.id, // Assuming you have the user ID stored in the user object
+      }
+
+      const response = await axios.post(
+        'http://localhost:5000/update-user',
+        updatedUserData
+      )
+
+      if (response.status === 200) {
+        updateUser(response.data) // Update user context with new data
+        message.success('Данные успешно обновлены')
+        setIsModalVisible(false)
+      } else {
+        message.error('Ошибка при обновлении данных')
+      }
     } catch (error) {
-      console.error('Validation Failed:', error)
+      message.error('Ошибка при валидации данных')
+      console.error('Error updating user:', error)
     }
   }
 
@@ -31,10 +48,13 @@ const Profile = () => {
       <h2>Личный кабинет</h2>
       <div>
         <p>
-          <strong>Имя:</strong> {user.name}
+          <strong>Имя:</strong> {user.real_name}
         </p>
         <p>
-          <strong>Номер телефона:</strong> {user.phone}
+          <strong>Номер телефона:</strong> +{user.phone}
+        </p>
+        <p>
+          <strong>Почта:</strong> {user.email}
         </p>
         <Button type="primary" onClick={showModal}>
           Редактировать
@@ -64,6 +84,18 @@ const Profile = () => {
               {
                 required: true,
                 message: 'Пожалуйста, введите ваш номер телефона',
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Почта"
+            rules={[
+              {
+                required: true,
+                message: 'Пожалуйста, введите вашу почту',
               },
             ]}
           >

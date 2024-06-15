@@ -16,7 +16,7 @@ const ResourceProvider = ({ children }) => {
 
   ResourseClient.interceptors.request.use(
     (config) => {
-      const accessToken = inMemoryJWT.getToken() // Make sure you import inMemoryJWT correctly
+      const accessToken = inMemoryJWT.getToken()
       if (accessToken) {
         config.headers['Authorization'] = `Bearer ${accessToken}`
       }
@@ -32,7 +32,6 @@ const ResourceProvider = ({ children }) => {
         reservationData
       )
       console.log('Reservation successful:', response.data)
-      // Можно добавить дополнительную логику по успешному завершению
     } catch (error) {
       console.error(
         'Failed to make a reservation:',

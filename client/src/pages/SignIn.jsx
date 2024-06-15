@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { signInSchema } from './validtionSchemas'
 import Field from '../components/Field/Field'
 import Button from '../components/Button/Button'
+import logo from '../images/bivo-shop_logo.svg'
 
 const defaultValues = {
   userName: '',
@@ -25,30 +26,33 @@ export default function SignIn() {
   })
 
   return (
-    <form
-      onSubmit={handleSubmit(handleSignIn)}
-      className={`${style.wrapper} ${style.authPanel}`}
-    >
-      <h2>Войти в аккаунт</h2>
-      <Field
-        name="userName"
-        register={register}
-        autoComplete="off"
-        placeholder="Имя пользователя"
-        error={Boolean(errors.userName)}
-        helperText={errors.userName?.message}
-      />
-      <Field
-        name="password"
-        register={register}
-        autoComplete="off"
-        placeholder="Пароль"
-        error={Boolean(errors.password)}
-        helperText={errors.password?.message}
-      />
-      <Button disabled={isSubmitting} type="submit">
-        Войти
-      </Button>
-    </form>
+    <div className={style.formWrapper}>
+      <img className="w-[10%]" src={logo} />
+      <form
+        onSubmit={handleSubmit(handleSignIn)}
+        className={`${style.wrapper} ${style.authPanel}`}
+      >
+        <h2>Войти в аккаунт</h2>
+        <Field
+          name="userName"
+          register={register}
+          autoComplete="off"
+          placeholder="Имя пользователя"
+          error={Boolean(errors.userName)}
+          helperText={errors.userName?.message}
+        />
+        <Field
+          name="password"
+          register={register}
+          autoComplete="off"
+          placeholder="Пароль"
+          error={Boolean(errors.password)}
+          helperText={errors.password?.message}
+        />
+        <Button disabled={isSubmitting} type="submit">
+          Войти
+        </Button>
+      </form>
+    </div>
   )
 }

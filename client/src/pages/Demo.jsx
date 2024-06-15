@@ -1,58 +1,74 @@
-import React, { useState } from 'react'
-import ReservationForm from '../components/ui/ReservationForm'
-import PreOrderForm from '../components/ui/PreOrderForm'
-import Confirmation from '../components/ui/Confirmation'
-import '../antd/dist/antd.css'
+import React, { useState, useContext } from 'react'
+import Step1 from '../components/Step1'
+import Step2 from '../components/Step2'
+import Step3 from '../components/Step3'
+import { BookingContext } from '../context/BookingContext'
+import { message } from 'antd'
+import axios from 'axios'
+import { AuthContext } from '../context/AuthContext'
 
 const Demo = () => {
-  const [step, setStep] = useState(1)
-  const [reservationData, setReservationData] = useState(null)
-  const [preOrderData, setPreOrderData] = useState(null)
+  const [currentStep, setCurrentStep] = useState(0)
+  const {
+    bookingData,
+    setBookingData,
+    setAvailableFoodItems,
+    setSelectedFoodItems,
+  } = useContext(BookingContext)
+  const { user } = useContext(AuthContext)
 
-  const handleReservationNext = (data) => {
-    setReservationData(data)
-    setStep(2)
+  const nextStep = () => {
+    setCurrentStep(currentStep + 1)
   }
 
-  const handlePreOrderNext = (data) => {
-    setPreOrderData(data)
-    setStep(3)
+  const prevStep = () => {
+    setCurrentStep(currentStep - 1)
   }
 
-  const handlePreOrderSkip = () => {
-    setStep(3)
-  }
+  const confirmBooking = async () => {
+    const totalFoodCost = bookingData.foodItems.reduce((total, foodItem) => {
+      return total + foodItem.price * (foodItem.amount || 1)
+    }, 0)
 
-  const handleConfirm = () => {
-    setStep(1)
-    setReservationData(null)
-    setPreOrderData(null)
-  }
+    const reservationData = {
+      ...bookingData,
+      user_id: user.id,
+      totalFoodCost, // добавляем общую стоимость блюд
+      foodItems: bookingData.foodItems.map((item) => ({
+        id: item.id,
+        amount: item.amount,
+      })),
+    }
 
-  const handleBack = () => {
-    setStep(1)
+    try {
+      await axios.post('http://localhost:5000/reserve', reservationData)
+      message.success('Бронирование успешно подтверждено')
+
+      // Clear booking data after successful reservation
+      setBookingData({
+        name: '',
+        phone: '',
+        date: null,
+        time: null,
+        people: 1,
+        foodItems: [],
+      })
+      setAvailableFoodItems([])
+      setSelectedFoodItems([])
+    } catch (error) {
+      message.error('Ошибка при подтверждении бронирования')
+    }
+
+    setCurrentStep(0)
   }
 
   return (
-    <div className="container">
-      <div className="reservBlock">
-        <h1>Бронирование</h1>
-        {step === 1 && <ReservationForm onNext={handleReservationNext} />}
-        {step === 2 && (
-          <PreOrderForm
-            onNext={handlePreOrderNext}
-            onSkip={handlePreOrderSkip}
-          />
-        )}
-        {step === 3 && (
-          <Confirmation
-            reservationData={reservationData}
-            preOrderData={preOrderData}
-            onConfirm={handleConfirm}
-            onBack={handleBack}
-          />
-        )}
-      </div>
+    <div className="reservForm">
+      {currentStep === 0 && <Step1 nextStep={nextStep} />}
+      {currentStep === 1 && <Step2 nextStep={nextStep} prevStep={prevStep} />}
+      {currentStep === 2 && (
+        <Step3 prevStep={prevStep} confirmBooking={confirmBooking} />
+      )}
     </div>
   )
 }

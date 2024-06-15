@@ -7,6 +7,7 @@ import Demo from './pages/Demo'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import { AuthContext } from './context/AuthContext'
+import BookingProvider from './context/BookingContext'
 import Navbar from './components/Navbar/Navbar'
 
 const App = () => {
@@ -16,27 +17,31 @@ const App = () => {
     <SnackbarProvider>
       <BrowserRouter>
         {isUserLogged && <Navbar />}
-        <Routes>
-          {isUserLogged ? (
-            <>
-              <Route path="demo" element={<Demo />} />
-              <Route path="profile" element={<Profile />} />
-              <Route
-                path="admin"
-                element={user?.role === 1 ? <Admin /> : <Navigate to="/demo" />}
-              />
-            </>
-          ) : (
-            <>
-              <Route path="sign-in" element={<SignIn />} />
-              <Route path="sign-up" element={<SignUp />} />
-            </>
-          )}
-          <Route
-            path="*"
-            element={<Navigate to={isUserLogged ? 'demo' : 'sign-in'} />}
-          />
-        </Routes>
+        <BookingProvider>
+          <Routes>
+            {isUserLogged ? (
+              <>
+                <Route path="demo" element={<Demo />} />
+                <Route path="profile" element={<Profile />} />
+                <Route
+                  path="admin"
+                  element={
+                    user?.role === 1 ? <Admin /> : <Navigate to="/demo" />
+                  }
+                />
+              </>
+            ) : (
+              <>
+                <Route path="sign-in" element={<SignIn />} />
+                <Route path="sign-up" element={<SignUp />} />
+              </>
+            )}
+            <Route
+              path="*"
+              element={<Navigate to={isUserLogged ? 'demo' : 'sign-in'} />}
+            />
+          </Routes>
+        </BookingProvider>
       </BrowserRouter>
     </SnackbarProvider>
   )

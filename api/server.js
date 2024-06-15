@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import Fingerprint from 'express-fingerprint'
 import bodyParser from 'body-parser'
 import AuthRouter from './routers/Auth.js'
+import moment from 'moment'
 import TokenService from './services/Token.js'
 import cookieParser from 'cookie-parser'
 import pool from './db.js'
@@ -48,30 +49,80 @@ app.listen(PORT, () => {
 })
 
 app.post('/reserve', async (req, res) => {
-  const { name, date, people, phone, user_id } = req.body
-  const reservation_date = `${date} 00:00:00` // Set time to midnight as we are only concerned with the date
+  const client = await pool.connect()
+  const { name, phone, date, time, people, foodItems, user_id, email } =
+    req.body
 
   try {
-    const exists = await pool.query(
-      'SELECT * FROM reservations WHERE reservation_date = $1 AND user_id = $2',
-      [reservation_date, user_id]
-    )
+    await client.query('BEGIN')
 
-    if (exists.rowCount > 0) {
-      return res.status(409).json({ error: 'У вас уже есть бронь на эту дату' })
+    const formattedDate = moment(date).format('YYYY-MM-DD')
+
+    const formattedTime = moment(time, 'HH:mm')
+      .subtract(1, 'hours')
+      .format('HH:mm:ss')
+
+    let totalPrice = 0
+    if (foodItems && foodItems.length > 0) {
+      const foodPricePromises = foodItems.map(async (foodItem) => {
+        const foodResult = await client.query(
+          `SELECT price FROM food WHERE id = $1`,
+          [foodItem.id]
+        )
+        const foodPrice = parseFloat(foodResult.rows[0].price)
+        totalPrice += foodPrice * foodItem.amount
+        return { foodId: foodItem.id, foodPrice, amount: foodItem.amount }
+      })
+      const foodPrices = await Promise.all(foodPricePromises)
+
+      const reservationResult = await client.query(
+        `INSERT INTO reservations (name, phone, date, time, people, user_id, created_at, food_price, email) 
+         VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, $8) 
+         RETURNING id`,
+        [
+          name,
+          phone,
+          formattedDate,
+          formattedTime,
+          people,
+          user_id,
+          totalPrice,
+          email,
+        ]
+      )
+      const reservationId = reservationResult.rows[0].id
+
+      // Insert into food_reserv
+      const foodInsertPromises = foodPrices.map(
+        ({ foodId, foodPrice, amount }) => {
+          return client.query(
+            `INSERT INTO food_reserv (reservation_id, food_id, price, amount) 
+           VALUES ($1, $2, $3, $4)`,
+            [reservationId, foodId, foodPrice, amount]
+          )
+        }
+      )
+      await Promise.all(foodInsertPromises)
+    } else {
+      // Insert into reservations without food price if no food items selected
+      const reservationResult = await client.query(
+        `INSERT INTO reservations (name, phone, date, time, people, user_id, email) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING id`,
+        [name, phone, formattedDate, formattedTime, people, user_id, email]
+      )
     }
 
-    const result = await pool.query(
-      'INSERT INTO reservations (name, reservation_date, number_of_people, phone, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [name, reservation_date, people, phone, user_id]
-    )
-
+    await client.query('COMMIT')
     res
       .status(201)
-      .json({ message: 'Бронь успешно создана', reservation: result.rows[0] })
+      .send({ message: 'Reservation confirmed', totalPrice: totalPrice })
   } catch (error) {
+    await client.query('ROLLBACK')
     console.error('Error saving reservation:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).send('Error confirming reservation')
+  } finally {
+    client.release()
   }
 })
 
@@ -122,5 +173,25 @@ app.delete('/reservations/:id', async (req, res) => {
   } catch (error) {
     console.error('Error cancelling reservation:', error)
     res.status(500).json({ error: 'Internal Server Error' })
+  }
+})
+
+app.post('/update-user', async (req, res) => {
+  const { name, phone, email, user_id } = req.body
+
+  try {
+    const result = await pool.query(
+      'UPDATE users SET real_name = $1, phone = $2, email = $3 WHERE id = $4 RETURNING *',
+      [name, phone, email, user_id]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).send('User not found')
+    }
+
+    res.json(result.rows[0])
+  } catch (error) {
+    console.error('Error updating user:', error)
+    res.status(500).send('Server error')
   }
 })

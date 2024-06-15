@@ -5,6 +5,9 @@
 .mantine-DatePicker-arrow {
   font-size: 16px; /* или другой желаемый размер */
 }
+:where(.css-dev-only-do-not-override-usln0u).ant-btn-primary {
+  background: black;
+}
 
 .mantine-DatePicker-arrowLeft {
   margin-right: 8px;
@@ -47,4 +50,28 @@
 }
 form ._button_1oj4g_1 {
   margin-left: 0;
+}
+
+.reservForm {
+  padding-top: 3%;
+  padding-left: 25%;
+  padding-right: 25%;
+  justify-content: center;
+}
+
+.lastReserv {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-content: center;
+  flex-wrap: wrap;
+}
+
+.reservForm p {
+  font-size: 17px;
+}
+
+.reservForm h2 {
+  font-size: 20px;
+  padding-bottom: 15px;
 }

@@ -145,13 +145,8 @@ const AuthProvider = ({ children }) => {
     }
   }
 
-  const updateUser = async (updatedData) => {
-    try {
-      const response = await AuthClient.put('/update-user', updatedData)
-      setUser(response.data)
-    } catch (error) {
-      console.error('Update user error', error)
-    }
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser)
   }
 
   return (

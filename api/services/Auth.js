@@ -41,6 +41,7 @@ class AuthService {
         userName: userData.userName,
         real_name: userData.real_name,
         phone: userData.phone,
+        email: userData.email,
       },
     }
   }

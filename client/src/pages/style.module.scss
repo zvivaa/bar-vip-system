@@ -29,8 +29,19 @@
   justify-content: center;
   flex-direction: column;
   align-items: center;
-  height: 100vh;
   position: relative;
+}
+
+.formWrapper {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.formWrapper img {
+  margin-top: -10%;
 }
 
 @keyframes appearence {
