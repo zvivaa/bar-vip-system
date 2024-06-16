@@ -1,28 +1,62 @@
 import React, { useState, useEffect, useContext } from 'react'
-import { Table, Button, Modal, Form, Input, Select, List } from 'antd'
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Select,
+  message,
+  Radio,
+  Flex,
+} from 'antd'
 import { AuthContext } from '../context/AuthContext'
 import { saveAs } from 'file-saver'
 import * as XLSX from 'xlsx'
 import axios from 'axios'
+import moment from 'moment'
 import config from '../config'
-
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+} from 'recharts'
 import style from './admin.module.css'
 
 const Admin = () => {
   const [users, setUsers] = useState([])
   const [reservations, setReservations] = useState([])
   const [foodItems, setFoodItems] = useState([])
+  const [preOrderItems, setPreOrderItems] = useState([])
+  const [chartType, setChartType] = useState('reservations')
   const [isUserModalVisible, setIsUserModalVisible] = useState(false)
   const [isReservationModalVisible, setIsReservationModalVisible] =
     useState(false)
   const [isFoodModalVisible, setIsFoodModalVisible] = useState(false)
+  const [isPreOrderModalVisible, setIsPreOrderModalVisible] = useState(false)
   const [form] = Form.useForm()
   const { createUsers, getActiveReservations } = useContext(AuthContext)
 
   useEffect(() => {
-    getActiveReservations().then(setReservations)
+    fetchReservations()
     fetchFoodItems()
+    fetchAllPreOrderItems()
   }, [])
+
+  const fetchReservations = async () => {
+    try {
+      const reservations = await getActiveReservations()
+      setReservations(reservations)
+    } catch (error) {
+      console.error('Error fetching reservations:', error)
+    }
+  }
 
   const fetchFoodItems = async () => {
     try {
@@ -33,11 +67,31 @@ const Admin = () => {
     }
   }
 
+  const fetchPreOrderItems = async (reservationId) => {
+    try {
+      const response = await axios.get(
+        `${config.API_URL}/reservations/${reservationId}/preorders`
+      )
+      setPreOrderItems(response.data)
+    } catch (error) {
+      console.error('Error fetching pre-order items:', error)
+    }
+  }
+
+  const fetchAllPreOrderItems = async () => {
+    try {
+      const response = await axios.get(`${config.API_URL}/all-preorders`)
+      setPreOrderItems(response.data)
+    } catch (error) {
+      console.error('Error fetching all pre-order items:', error)
+    }
+  }
+
   const handleCreateUsers = async () => {
     form.validateFields().then(async (values) => {
       const createdUsers = await createUsers(values.users)
       if (createdUsers) {
-        setUsers(createdUsers.slice(-5)) // Сохраняем только последние 5 созданных пользователей
+        setUsers(createdUsers.slice(-5))
       }
       form.resetFields()
       setIsUserModalVisible(false)
@@ -54,7 +108,7 @@ const Admin = () => {
     try {
       const createdUsers = await createUsers(randomUsers)
       if (createdUsers) {
-        setUsers(createdUsers.slice(-5)) // Сохраняем только последние 5 созданных пользователей
+        setUsers(createdUsers.slice(-5))
       }
     } catch (error) {
       console.error('Error creating random users:', error)
@@ -73,13 +127,20 @@ const Admin = () => {
     saveAs(data, 'users.xlsx')
   }
 
-  const handleCancelReservation = async (id) => {
+  const cancelReservation = async (reservationId) => {
     try {
-      await axios.delete(`${config.API_URL}/reservations/${id}`)
-      setReservations((prev) =>
-        prev.filter((reservation) => reservation.id !== id)
+      const response = await axios.post(
+        `http://localhost:5000/cancel-reservation`,
+        { reservationId }
       )
+      if (response.status === 200) {
+        message.success('Бронирование успешно отменено')
+        fetchReservations()
+      } else {
+        message.error('Ошибка при отмене бронирования')
+      }
     } catch (error) {
+      message.error('Ошибка при отмене бронирования')
       console.error('Error cancelling reservation:', error)
     }
   }
@@ -93,6 +154,11 @@ const Admin = () => {
     }
   }
 
+  const handleShowPreOrder = (reservationId) => {
+    fetchPreOrderItems(reservationId)
+    setIsPreOrderModalVisible(true)
+  }
+
   const userColumns = [
     { title: 'Имя пользователя', dataIndex: 'name', key: 'name' },
     { title: 'Пароль', dataIndex: 'password', key: 'password' },
@@ -100,20 +166,40 @@ const Admin = () => {
 
   const reservationColumns = [
     { title: 'Имя', dataIndex: 'name', key: 'name' },
-    { title: 'Дата', dataIndex: 'reservation_date', key: 'reservation_date' },
+    {
+      title: 'Дата',
+      dataIndex: 'date',
+      key: 'date',
+      render: (date) => moment(date).format('YYYY-MM-DD'),
+    },
+    {
+      title: 'Время',
+      dataIndex: 'time',
+      key: 'time',
+      render: (time) => moment(time, 'HH:mm').format('HH:mm'),
+    },
     {
       title: 'Количество человек',
-      dataIndex: 'number_of_people',
-      key: 'number_of_people',
+      dataIndex: 'people',
+      key: 'people',
     },
-    { title: 'Столик', dataIndex: 'table_id', key: 'table_id' },
+    { title: 'Сумма предзаказа', dataIndex: 'food_price', key: 'food_price' },
+    {
+      title: 'Дата создания',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (createdAt) => moment(createdAt).format('YYYY-MM-DD HH:mm:ss'),
+    },
     {
       title: 'Действие',
       key: 'action',
       render: (_, record) => (
-        <Button onClick={() => handleCancelReservation(record.id)}>
-          Отменить
-        </Button>
+        <>
+          <Button onClick={() => cancelReservation(record.id)}>Отменить</Button>
+          <Button onClick={() => handleShowPreOrder(record.id)}>
+            Предзаказ
+          </Button>
+        </>
       ),
     },
   ]
@@ -123,6 +209,34 @@ const Admin = () => {
     { title: 'Цена', dataIndex: 'price', key: 'price' },
     { title: 'Описание', dataIndex: 'description', key: 'description' },
   ]
+
+  const preOrderColumns = [
+    { title: 'Название', dataIndex: 'name', key: 'name' },
+    { title: 'Количество', dataIndex: 'amount', key: 'amount' },
+    { title: 'Цена', dataIndex: 'price', key: 'price' },
+  ]
+
+  // Data for charts
+  const reservationData = reservations.reduce((acc, res) => {
+    const date = moment(res.date).format('YYYY-MM-DD')
+    const existing = acc.find((item) => item.date === date)
+    if (existing) {
+      existing.count += 1
+    } else {
+      acc.push({ date, count: 1 })
+    }
+    return acc
+  }, [])
+
+  const foodData = preOrderItems.reduce((acc, item) => {
+    const existing = acc.find((f) => f.name === item.name)
+    if (existing) {
+      existing.count += parseInt(item.total_amount, 10)
+    } else {
+      acc.push({ name: item.name, count: parseInt(item.total_amount, 10) })
+    }
+    return acc
+  }, [])
 
   return (
     <div className="container">
@@ -136,6 +250,59 @@ const Admin = () => {
         <Button type="primary" onClick={() => setIsFoodModalVisible(true)}>
           Управление меню еды
         </Button>
+      </div>
+      <div style={{ padding: '25px' }}>
+        <Radio.Group
+          value={chartType}
+          onChange={(e) => setChartType(e.target.value)}
+          style={{ marginBottom: 20 }}
+        >
+          <Radio.Button value="reservations">Даты бронирования</Radio.Button>
+          <Radio.Button value="food">Заказанная еда</Radio.Button>
+        </Radio.Group>
+      </div>
+      <div
+        style={{
+          width: '100%',
+          alignItems: 'center',
+          display: 'flex',
+          justifyContent: 'center',
+        }}
+      >
+        {chartType === 'reservations' ? (
+          <LineChart
+            width={800}
+            height={400}
+            data={reservationData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke="#8884d8"
+              activeDot={{ r: 8 }}
+            />
+          </LineChart>
+        ) : (
+          <BarChart
+            width={800}
+            height={400}
+            data={foodData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
+        )}
       </div>
       <Modal
         title="Создать пользователей"
@@ -198,53 +365,44 @@ const Admin = () => {
           </Form.List>
         </Form>
         <h3>Последние созданные пользователи</h3>
-        <Table columns={userColumns} dataSource={users} rowKey="id" />
+        <Table dataSource={users} columns={userColumns} rowKey="id" />
       </Modal>
-
       <Modal
         title="Список броней"
         visible={isReservationModalVisible}
         onCancel={() => setIsReservationModalVisible(false)}
         footer={null}
+        width={'100%'}
       >
         <Table
-          columns={reservationColumns}
           dataSource={reservations}
+          columns={reservationColumns}
           rowKey="id"
         />
       </Modal>
-
       <Modal
         title="Управление меню еды"
         visible={isFoodModalVisible}
         onCancel={() => setIsFoodModalVisible(false)}
         footer={null}
       >
-        <Form layout="vertical" onFinish={handleCreateFoodItem}>
+        <Form onFinish={handleCreateFoodItem} layout="vertical">
           <Form.Item
             name="name"
             label="Название"
-            rules={[
-              { required: true, message: 'Пожалуйста, введите название' },
-            ]}
+            rules={[{ required: true, message: 'Введите название' }]}
           >
-            <Input placeholder="Введите название" />
+            <Input />
           </Form.Item>
           <Form.Item
             name="price"
             label="Цена"
-            rules={[{ required: true, message: 'Пожалуйста, введите цену' }]}
+            rules={[{ required: true, message: 'Введите цену' }]}
           >
-            <Input placeholder="Введите цену" />
+            <Input />
           </Form.Item>
-          <Form.Item
-            name="description"
-            label="Описание"
-            rules={[
-              { required: true, message: 'Пожалуйста, введите описание' },
-            ]}
-          >
-            <Input placeholder="Введите описание" />
+          <Form.Item name="description" label="Описание">
+            <Input.TextArea />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">
@@ -252,8 +410,19 @@ const Admin = () => {
             </Button>
           </Form.Item>
         </Form>
-        <h3>Меню еды</h3>
-        <Table columns={foodColumns} dataSource={foodItems} rowKey="id" />
+        <Table dataSource={foodItems} columns={foodColumns} rowKey="id" />
+      </Modal>
+      <Modal
+        title="Предзаказ"
+        visible={isPreOrderModalVisible}
+        onCancel={() => setIsPreOrderModalVisible(false)}
+        footer={null}
+      >
+        <Table
+          dataSource={preOrderItems}
+          columns={preOrderColumns}
+          rowKey="id"
+        />
       </Modal>
     </div>
   )

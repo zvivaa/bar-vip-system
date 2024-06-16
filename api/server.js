@@ -165,14 +165,45 @@ app.post('/food', async (req, res) => {
   }
 })
 
-app.delete('/reservations/:id', async (req, res) => {
-  const { id } = req.params
+app.get('/user-reservations/:userId', async (req, res) => {
+  const { userId } = req.params
+  const client = await pool.connect()
+
   try {
-    await pool.query('DELETE FROM reservations WHERE id = $1', [id])
-    res.status(204).send()
+    const result = await client.query(
+      `SELECT * FROM reservations WHERE user_id = $1 AND date >= CURRENT_DATE ORDER BY date, time`,
+      [userId]
+    )
+    res.status(200).json(result.rows)
   } catch (error) {
+    console.error('Error fetching reservations:', error)
+    res.status(500).send('Error fetching reservations')
+  } finally {
+    client.release()
+  }
+})
+
+// Отмена бронирования
+app.post('/cancel-reservation', async (req, res) => {
+  const client = await pool.connect()
+  const { reservationId } = req.body
+
+  try {
+    await client.query('BEGIN')
+    await client.query(`DELETE FROM food_reserv WHERE reservation_id = $1`, [
+      reservationId,
+    ])
+    await client.query(`DELETE FROM reservations WHERE id = $1`, [
+      reservationId,
+    ])
+    await client.query('COMMIT')
+    res.status(200).send({ message: 'Reservation cancelled' })
+  } catch (error) {
+    await client.query('ROLLBACK')
     console.error('Error cancelling reservation:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    res.status(500).send('Error cancelling reservation')
+  } finally {
+    client.release()
   }
 })
 
@@ -193,5 +224,44 @@ app.post('/update-user', async (req, res) => {
   } catch (error) {
     console.error('Error updating user:', error)
     res.status(500).send('Server error')
+  }
+})
+
+app.get('/reservations/:id/preorders', async (req, res) => {
+  const { id } = req.params
+
+  try {
+    const result = await pool.query(
+      `SELECT fr.food_id, f.name, f.description, fr.price, fr.amount 
+       FROM food_reserv fr 
+       JOIN food f ON fr.food_id = f.id 
+       WHERE fr.reservation_id = $1`,
+      [id]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).send('Preorders not found for the reservation')
+    }
+
+    res.status(200).json(result.rows)
+  } catch (error) {
+    console.error('Error fetching preorders:', error)
+    res.status(500).send('Error fetching preorders')
+  }
+})
+
+app.get('/all-preorders', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT f.name, SUM(CAST(fr.amount AS INTEGER)) as total_amount
+       FROM food_reserv fr
+       JOIN food f ON fr.food_id = f.id
+       GROUP BY f.name`
+    )
+
+    res.status(200).json(result.rows)
+  } catch (error) {
+    console.error('Error fetching all preorders:', error)
+    res.status(500).send('Error fetching all preorders')
   }
 })

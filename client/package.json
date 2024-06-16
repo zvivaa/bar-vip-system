@@ -33,6 +33,7 @@
     "react-hook-form": "^7.48.2",
     "react-preloaders": "^3.0.3",
     "react-router-dom": "^6.18.0",
+    "recharts": "^2.12.7",
     "sass": "^1.69.5",
     "shadcn-ui": "^0.8.0",
     "xlsx": "^0.18.5",

@@ -88,7 +88,7 @@ const Step2 = ({ nextStep, prevStep }) => {
         className="cardReserv"
         style={{ display: 'flex', justifyContent: 'space-between' }}
       >
-        <Card title="Доступные блюда" style={{ width: '45%' }}>
+        <Card title="Доступные блюда" style={{ width: '100%' }}>
           <List
             dataSource={availableFoodItems}
             renderItem={(item) => (
@@ -108,7 +108,7 @@ const Step2 = ({ nextStep, prevStep }) => {
             )}
           />
         </Card>
-        <Card title="Выбранные блюда" style={{ width: '45%' }}>
+        <Card title="Выбранные блюда" style={{ width: '100%' }}>
           <List
             dataSource={selectedFoodItems}
             renderItem={(item) => (
