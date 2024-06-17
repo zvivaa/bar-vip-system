@@ -18,7 +18,7 @@ const Profile = () => {
   const fetchReservations = async () => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/user-reservations/${user.id}`
+        `https://941d-37-79-25-23.ngrok-free.app/user-reservations/${user.id}`
       )
       if (response.status === 200) {
         setReservations(response.data)
@@ -34,7 +34,7 @@ const Profile = () => {
   const cancelReservation = async (reservationId) => {
     try {
       const response = await axios.post(
-        `http://localhost:5000/cancel-reservation`,
+        `https://941d-37-79-25-23.ngrok-free.app/cancel-reservation`,
         { reservationId }
       )
       if (response.status === 200) {
@@ -67,7 +67,7 @@ const Profile = () => {
       }
 
       const response = await axios.post(
-        'http://localhost:5000/update-user',
+        'https://941d-37-79-25-23.ngrok-free.app/update-user',
         updatedUserData
       )
 

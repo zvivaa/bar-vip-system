@@ -41,7 +41,10 @@ const Demo = () => {
     }
 
     try {
-      await axios.post('http://localhost:5000/reserve', reservationData)
+      await axios.post(
+        'https://941d-37-79-25-23.ngrok-free.app/reserve',
+        reservationData
+      )
       message.success('Бронирование успешно подтверждено')
 
       // Clear booking data after successful reservation

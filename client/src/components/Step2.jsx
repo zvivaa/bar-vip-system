@@ -16,7 +16,9 @@ const Step2 = ({ nextStep, prevStep }) => {
   useEffect(() => {
     const fetchFoodItems = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/food')
+        const response = await axios.get(
+          'https://941d-37-79-25-23.ngrok-free.app/food'
+        )
         setAvailableFoodItems(response.data)
       } catch (error) {
         message.error('Ошибка при загрузке списка блюд')

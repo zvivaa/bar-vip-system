@@ -130,7 +130,7 @@ const Admin = () => {
   const cancelReservation = async (reservationId) => {
     try {
       const response = await axios.post(
-        `http://localhost:5000/cancel-reservation`,
+        `https://941d-37-79-25-23.ngrok-free.app/cancel-reservation`,
         { reservationId }
       )
       if (response.status === 200) {
