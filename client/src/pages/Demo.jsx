@@ -42,7 +42,7 @@ const Demo = () => {
 
     try {
       await axios.post(
-        'https://941d-37-79-25-23.ngrok-free.app/reserve',
+        'https://b769-94-51-211-23.ngrok-free.app/reserve',
         reservationData
       )
       message.success('Бронирование успешно подтверждено')

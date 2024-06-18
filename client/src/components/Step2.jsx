@@ -17,7 +17,7 @@ const Step2 = ({ nextStep, prevStep }) => {
     const fetchFoodItems = async () => {
       try {
         const response = await axios.get(
-          'https://941d-37-79-25-23.ngrok-free.app/food'
+          'https://b769-94-51-211-23.ngrok-free.app/food'
         )
         setAvailableFoodItems(response.data)
       } catch (error) {
